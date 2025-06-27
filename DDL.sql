@@ -5,16 +5,19 @@ CREATE TYPE ski.sides AS ENUM ('sx','frontal','dx');
 CREATE TYPE ski.movements AS ENUM('Fwd','Still','Bkw');
 CREATE TYPE ski.kata_series AS ENUM ('Heian','Tekki','Sentei');
 CREATE TYPE ski.target AS ENUM('Jodan','Chudan','Gedan');
-CREATE TYPE ski.waza_type AS ENUM('Uke','Uchi','Geri');
+CREATE TYPE ski.waza_type AS ENUM('Uke','Uchi','Geri','NA','_');
 CREATE TYPE ski.embusen_points AS (
     x SMALLINT,
     y SMALLINT
 );
+CREATE TYPE ski.arti AS ENUM('Braccio DX','Braccio SX','Braccia','Gamba DX','Gamba SX','Gambe');
+
 
 CREATE TABLE ski.technics(
     id_technic SMALLSERIAL PRIMARY KEY,
     waza ski.waza_type,
     name VARCHAR(255) NOT NULL,
+    -- aka VARCHAR(255) ,
     description TEXT,
     notes TEXT,
     resource_url TEXT,
@@ -26,6 +29,7 @@ CREATE TABLE ski.technics(
 CREATE TABLE ski.stands(
     id_stand SMALLSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    -- aka VARCHAR(255) ,
     description TEXT,
     illustration_url TEXT,
     notes TEXT
@@ -85,11 +89,12 @@ CREATE TABLE ski.kata_sequence(
     kata_id SMALLSERIAL NOT NULL,
     seq_num SMALLSERIAL NOT NULL,
     stand SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
-    technic SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
-    technic_target SMALLSERIAL NOT NULL,
+    --technic SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
+    --technic_target SMALLSERIAL NOT NULL,
     --embusen
-    notes SMALLSERIAL NOT NULL,
-    resource_url TEXT NULL , 
+    --facing
+    notes TEXT,
+    resource_url TEXT, 
     CONSTRAINT unique_kata_seq UNIQUE (kata_id, seq_num)
 );
 
@@ -98,14 +103,12 @@ CREATE TABLE ski.kata_tx(
     from_seq SMALLINT NOT NULL ,
     to_seq SMALLINT NOT NULL ,
     direction ski.sides ,
-    rotation SMALLINT ,
+    --rotation SMALLINT ,
     movement ski.movements ,
     intermediate_stand SMALLSERIAL REFERENCES ski.stands(id_stand),
     note TEXT,
     resource_url TEXT 
 );
-
-
 
 
 CREATE OR REPLACE FUNCTION ski.get_gradeid(
@@ -170,36 +173,9 @@ SELECT name FROM ski.stands WHERE id_stand = _stand_id;
 $$;
 --Per mettere il nome della posizione nell' output;
 
-
-CREATE OR REPLACE FUNCTION ski.get_kihon_sequence(
-_grade NUMERIC,
-_type VARCHAR,
-_num NUMERIC
-)
-RETURNS TABLE(
-seq_num NUMERIC,
-movement TEXT,
-tecnica TEXT ,
-posizione TEXT,
-target_hgt TEXT
-)
-LANGUAGE SQL
-AS $$
-SELECT 
-seq.seq_num,
-tx.movement ,
-CASE
-     WHEN seq.gyaku THEN CONCAT('(Gyaku) ',ski.get_technic_name(seq.techinc))
-     ELSE  ski.get_technic_name(seq.techinc)
-END AS tecnica,
-ski.get_stand_name(seq.stand) AS posizione ,
-seq.target_hgt
-
-FROM ski.kihon_sequences AS seq 
-LEFT JOIN ski.kihon_tx AS tx 
-ON seq.id_sequence = tx.to_seq 
-WHERE inventory_id = ski.get_kihonid(_grade,_type,_num)
-AND seq_num != 0
-ORDER BY seq_num;
-$$;
---SELECT ski.get_kihon_sequence(1,'dan',1);
+CREATE TABLE ski.combotecniche_kata (
+    id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
+    arto ski.arti,
+    technic SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
+    technic_target SMALLSERIAL NOT NULL
+);
