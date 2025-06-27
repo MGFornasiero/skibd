@@ -246,44 +246,44 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
 
 
 INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techinc,gyaku,target_hgt,note,resource_url) VALUES 
-    ( 456 ,91 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 457 ,91 ,1,4 , 70 ,'false' ,NULL , NULL , NULL ),
-    ( 458 ,91 ,2,4 , 11 ,'true' ,NULL , NULL , NULL ),
-    ( 459 ,91 ,3,4 , 26 ,'false' ,NULL , NULL , NULL ),
-    ( 460 ,91 ,4,4 , 40 ,'false' ,NULL , NULL , NULL ),
-    ( 466 ,92 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 467 ,92 ,1,4 , 36 ,'false' ,NULL , NULL , NULL ),
-    ( 468 ,92 ,2,9 , 52 ,'false' ,NULL , NULL , NULL ),
-    ( 469 ,92 ,3,4 , 64 ,'false' ,NULL , NULL , NULL ),
+    ( 456 ,91 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 457 ,91 ,1,4 , 70 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 458 ,91 ,2,4 , 11 ,'true' ,'Chudan' , NULL , NULL ),
+    ( 459 ,91 ,3,4 , 26 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 460 ,91 ,4,4 , 40 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 466 ,92 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 467 ,92 ,1,4 , 36 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 468 ,92 ,2,9 , 52 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 469 ,92 ,3,4 , 64 ,'false' ,'Chudan' , NULL , NULL ),
     ( 470 ,92 ,4,4 , 76 ,'true' ,'Jodan' , NULL , NULL ),
-    ( 476 ,93 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 477 ,93 ,1,4 , 34 ,'false' ,NULL , NULL , NULL ),
-    ( 478 ,93 ,2,4 , 80 ,'false' ,NULL , NULL , NULL ),
-    ( 479 ,93 ,3,4 , 29 ,'false' ,NULL , NULL , NULL ),
-    ( 480 ,93 ,4,4 , 65 ,'false' ,NULL , NULL , NULL ),
-    ( 486 ,94 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 487 ,94 ,1,4 , 2 ,'false' ,NULL , NULL , NULL ),
-    ( 488 ,94 ,2,9 , 15 ,'false' ,NULL , NULL , NULL ),
-    ( 496 ,95 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 497 ,95 ,1,4 , 35 ,'false' ,NULL , NULL , NULL ),
-    ( 498 ,95 ,2,4 , 14 ,'false' ,NULL , NULL , NULL ),
-    ( 499 ,95 ,3,4 , 18 ,'false' ,NULL , NULL , NULL ),
+    ( 476 ,93 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 477 ,93 ,1,4 , 34 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 478 ,93 ,2,4 , 80 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 479 ,93 ,3,4 , 29 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 480 ,93 ,4,4 , 65 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 486 ,94 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 487 ,94 ,1,4 , 2 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 488 ,94 ,2,9 , 15 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 496 ,95 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 497 ,95 ,1,4 , 35 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 498 ,95 ,2,4 , 14 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 499 ,95 ,3,4 , 18 ,'false' ,'Chudan' , NULL , NULL ),
     ( 500 ,95 ,4,4 , 50 ,'false' ,'Jodan' , NULL , NULL ),
-    ( 506 ,96 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 507 ,96 ,1,4 , 73 ,'false' ,NULL , NULL , NULL ),
-    ( 508 ,96 ,2,4 , 78 ,'false' ,NULL , NULL , NULL ),
-    ( 509 ,96 ,3,6 , 50 ,'false' ,NULL , NULL , NULL ),
-    ( 510 ,96 ,4,4 , 32 ,'false' ,NULL , NULL , NULL ),
-    ( 516 ,97 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 517 ,97 ,1,4 , 83 ,'false' ,NULL , NULL , NULL ),
-    ( 518 ,97 ,2,4 , 41 ,'false' ,NULL , NULL , NULL ),
-    ( 526 ,98 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
-    ( 527 ,98 ,1,4 , 37 ,'false' ,NULL , NULL , NULL ),
-    ( 528 ,98 ,2,4 , 38 ,'false' ,NULL , NULL , NULL ),
-    ( 529 ,98 ,3,4 , 41 ,'false' ,NULL , NULL , NULL ),
-    ( 530 ,98 ,4,4 , 23 ,'false' ,NULL , NULL , NULL ),
-    ( 537 ,99 ,1,4 , 200 ,'false' ,NULL , NULL , NULL ),
-    ( 541 ,100 ,1,4 , 250 ,'false' ,NULL , NULL , NULL )
+    ( 506 ,96 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 507 ,96 ,1,4 , 73 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 508 ,96 ,2,4 , 78 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 509 ,96 ,3,6 , 50 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 510 ,96 ,4,4 , 32 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 516 ,97 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 517 ,97 ,1,4 , 83 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 518 ,97 ,2,4 , 41 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 526 ,98 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 527 ,98 ,1,4 , 37 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 528 ,98 ,2,4 , 38 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 529 ,98 ,3,4 , 41 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 530 ,98 ,4,4 , 23 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 537 ,99 ,1,4 , 200 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 541 ,100 ,1,4 , 250 ,'false' ,'Chudan' , NULL , NULL )
 ;
 
 
@@ -317,3 +317,56 @@ INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,note ,resource_url )
     ( 527 , 528 , 529, 'Still' , NULL , NULL ),
     ( 528 , 529 , 530, 'Still' , NULL , NULL )
 ;
+
+---------------------------------
+
+INSERT INTO ski.Kata_inventory(id_kata,kata ,starting_leg) VALUES 
+(1,'test','sx')
+;
+
+INSERT INTO ski.kata_sequence(id_sequence ,kata_id ,seq_num ,stand) VALUES
+(1 ,1 ,1 ,4),
+(2 ,1 ,2 ,4),
+(3 ,1 ,3 ,4)
+;
+
+INSERT INTO ski.combotecniche_kata (id ,arto ,technic ,technic_target) VALUES
+(1 ,'Braccio DX',19 ,1),
+(2 ,'Braccio SX',14 ,1),
+(2 ,'Gamba DX',41 ,1),
+(3 ,'Braccio DX',32 ,1)
+;
+
+SELECT seq.id_sequence , seq.kata_id , seq.seq_num , seq.stand ,
+--combo.arto , combo.technic , combo.technic_target
+json_agg(
+    json_build_object('arto',combo.arto),
+    json_build_object('tecnca',combo.technic)
+    )
+
+--array_agg(combo.technic) as tecniche
+FROM ski.kata_sequence AS seq
+JOIN ski.combotecniche_kata AS combo
+ON seq.id_sequence = combo.id
+--GROUP BY seq.id_sequence
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
