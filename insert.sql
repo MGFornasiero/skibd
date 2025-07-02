@@ -337,6 +337,7 @@ INSERT INTO ski.combotecniche_kata (id ,arto ,technic ,technic_target) VALUES
 (3 ,'Braccio DX',32 ,1)
 ;
 
+<<<<<<< HEAD
 SELECT seq.id_sequence , seq.kata_id , seq.seq_num , seq.stand ,
 --combo.arto , combo.technic , combo.technic_target
 json_agg(
@@ -349,6 +350,34 @@ FROM ski.kata_sequence AS seq
 JOIN ski.combotecniche_kata AS combo
 ON seq.id_sequence = combo.id
 --GROUP BY seq.id_sequence
+=======
+
+
+SELECT seq.id_sequence , seq.kata_id , seq.seq_num , seq.stand ,
+--combo.arto , combo.technic , combo.technic_target
+json_agg(
+    json_build_object(
+        'Arto', combo.arto, 
+        'Tecnica', combo.technic,
+        'Name', combo.name,  
+        'Target', combo.technic_target
+    )
+)
+FROM ski.kata_sequence AS seq
+JOIN (
+    SELECT combo_raw.id,
+        combo_raw.arto ,
+        combo_raw.technic ,
+        combo_raw.technic_target ,
+        tech.name
+    FROM ski.combotecniche_kata AS combo_raw
+    JOIN ski.technics AS tech
+    ON combo_raw.technic = tech.id_technic
+) AS combo
+ON seq.id_sequence = combo.id
+GROUP BY seq.id_sequence
+ORDER BY seq.seq_num
+>>>>>>> my-new-branch
 ;
 
 
