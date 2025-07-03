@@ -19,9 +19,9 @@ CREATE TYPE ski.absolute_directions AS ENUM(
     'N',
     'NE',
     'E',
-    'SE'
+    'SE',
     'S',
-    'SO'
+    'SO',
     'O',
     'NO'
 ); -- Direzione assoluta rispetto al saluto inizale
@@ -29,11 +29,11 @@ CREATE TYPE ski.absolute_directions AS ENUM(
 CREATE TABLE ski.targets(
     id_target SMALLSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255)
+    original_name VARCHAR(255),
     description TEXT,
     notes TEXT,
     resource_url TEXT,
-    CONSTRAINT unique_technicname UNIQUE(name)
+    CONSTRAINT unique_targetname UNIQUE(name)
 ); -- parti del corpo colpite
 
 CREATE TABLE ski.strikingparts(
@@ -117,10 +117,10 @@ CREATE TABLE ski.kata_sequence(
     id_sequence SMALLSERIAL PRIMARY KEY,
     kata_id SMALLSERIAL NOT NULL REFERENCES ski.Kata_inventory(id_kata),
     seq_num SMALLSERIAL NOT NULL,
-    stand SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
-    side ski.sides,
+    stand_id SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
+    side ski.sides, -- lato della guardia
     embusen ski.embusen_points ,
-    facing ski.absolute_directions,
+    facing ski.absolute_directions, -- direzioni cardinali rispetto all' inizio
     kiai bool,
     notes TEXT,
     resource_url TEXT, 
@@ -130,11 +130,11 @@ CREATE TABLE ski.kata_sequence(
 -- In alternativa servirebbe un tipo array ma non sarebbero disponibili i constraint, quindi punta alla tabella collegata e 
 
 CREATE TABLE ski.kata_sequence_waza (
-    id_kswaza SMALLSERIAL PRIMARY KEY 
+    id_kswaza SMALLSERIAL PRIMARY KEY,
     sequence_id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
     arto ski.arti,
     technic_id SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
-    technic_target_id SMALLSERIAL REFERENCES ski.targets(id_target),
+    technic_target_id SMALLINT REFERENCES ski.targets(id_target),
     notes TEXT
 );
 
@@ -144,7 +144,7 @@ CREATE TABLE ski.kata_tx(
     to_seq SMALLINT NOT NULL ,
     tempo ski.tempo ,
     direction ski.sides ,
-    intermediate_stand SMALLSERIAL REFERENCES ski.stands(id_stand),
+    intermediate_stand SMALLINT REFERENCES ski.stands(id_stand),
     note TEXT,
     resource_url TEXT 
 );
@@ -182,7 +182,7 @@ AS $$
 SELECT id_inventory,grade_id, number FROM ski.kihon_inventory WHERE grade_id = ski.get_gradeid(_grade,_type);
 $$;
 
---SELECT * FROM ski.get_kihon(1,'dan');
+--SELECT * FROM ski.get_kihons(1,'dan');
 
 CREATE OR REPLACE FUNCTION ski.get_kihonid(
 _gradeid NUMERIC,
@@ -203,7 +203,7 @@ LANGUAGE SQL
 AS $$
 SELECT name FROM ski.technics WHERE id_technic = _technic_id;
 $$;
---Per mettere il nome della tecnica nell' output;
+--Per mettere il nome della tecnica nell' output ma da evitare in favore della join
 
 CREATE OR REPLACE FUNCTION ski.get_stand_name(
 _stand_id NUMERIC
@@ -213,6 +213,87 @@ LANGUAGE SQL
 AS $$
 SELECT name FROM ski.stands WHERE id_stand = _stand_id;
 $$;
---Per mettere il nome della posizione nell' output;
+--Per mettere il nome della posizione nell' output ma da evitare in favore della join
 
+CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id NUMERIC)
+RETURNS TABLE(
+    id_sequence SMALLINT ,
+    kata_id SMALLINT ,
+    seq_num SMALLINT ,
+    posizione TEXT ,
+    guardia ski.sides ,
+    facing ski.absolute_directions ,
+    Tecniche JSON ,
+    embusen ski.embusen_points ,
+    kiai BOOLEAN 
+)
+language sql
+as $$
+SELECT seq.id_sequence 
+    , seq.kata_id 
+    , seq.seq_num 
+    --, seq.stand_id
+    , MAX(stands.name) as posizione
+    , seq.side AS guardia
+    , seq.facing
+    , json_agg(
+        json_build_object(
+            --'sequence_id' , combo.sequence_id 
+            'arto' , combo.arto 
+            --, 'technic_id' , combo.technic_id 
+            , 'Tecnica' , combo.technic_name 
+            --, 'technic_target_id' , combo.technic_target_id 
+            , 'Obiettivo' , combo.target_name 
+            --, 'notes' , combo.notes 
+        )
+    ) AS Tecniche
+    , seq.embusen
+    , seq.kiai
+FROM ski.kata_sequence AS seq
+JOIN (
+    SELECT combo_raw.id_kswaza,
+        combo_raw.sequence_id ,
+        combo_raw.arto,
+        combo_raw.technic_id ,
+        combo_raw.technic_target_id,
+        combo_raw.notes ,
+        tech.name AS technic_name,
+        targets.name  AS target_name
+    FROM ski.kata_sequence_waza AS combo_raw
+    JOIN ski.technics AS tech
+    ON combo_raw.technic_id = tech.id_technic
+    LEFT JOIN ski.targets as targets
+    ON combo_raw.technic_target_id = targets.id_target
+) AS combo
+ON seq.id_sequence = combo.sequence_id
+LEFT JOIN ski.stands as stands
+ON seq.stand_id = stands.id_stand
+WHERE seq.kata_id = _kata_id
+GROUP BY seq.id_sequence
+ORDER BY seq.seq_num
+;
+$$;
+--SELECT * FROM ski.get_katasequence(1);
 
+CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id NUMERIC)
+RETURNS TABLE(
+    id_tx SMALLINT , 
+    from_seq SMALLINT ,
+    to_seq SMALLINT ,
+    tempo  ski.tempo ,
+    direction ski.sides
+)
+language sql
+as $$
+WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
+SELECT id_tx  , 
+    from_seq ,
+    to_seq ,
+    tempo ,
+    direction
+FROM ski.kata_tx
+WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
+OR to_seq IN (SELECT id_sequence FROM relevantseq)
+;
+$$;
+--SELECT * FROM ski.get_katatx(1);

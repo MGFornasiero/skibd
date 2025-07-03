@@ -1,3 +1,15 @@
+INSERT INTO  ski.targets(id_target ,name ,original_name ,description ) VALUES
+    ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ),
+    ( 2 , 'Chudan' ,$$Chudan$$ ,'Medio' ),
+    ( 3 , 'Gedan' ,$$Gedan$$ ,'Basso' ),
+    ( 4 , 'Testa' ,$$Atama$$ ,NULL ),
+    ( 5 , 'Faccia' ,$$Kao$$ ,NULL ),
+    ( 6 , 'Mascella' ,$$Ago$$ ,NULL ),
+    ( 7 , 'Collo Laterale' ,$$Kubi$$ ,NULL ),
+    ( 8 , 'Gola' ,$$Nodo$$ ,NULL ),
+    ( 9 , 'Torace' ,$$Mune$$ ,NULL )
+;
+
 INSERT INTO ski.grades (id_grade,gtype,grade) VALUES 
     (1,'kyu',9),
     (2,'kyu',8),
@@ -115,6 +127,7 @@ INSERT INTO ski.technics(id_technic,waza ,name ,description ,notes ,resource_url
     ( 82 , 'Geri' ,'Yoko geri Keage',$$Calcio laterale frustato$$ ,NULL ,NULL ),
     ( 83 , 'Geri' ,'Yoko geri Kekomi',$$Calcio laterale spinto$$ ,NULL ,NULL ),
     ( 84 , 'Geri' ,'Yoko Tobi geri',$$Calcio volante laterale$$ ,NULL ,NULL ),
+    ( 85 , 'Uke' ,'Age Shuto Uke',$$Parata a taglio verso l'alto (movimento che si fa con la mano opposta quando si esegue Age uke da studio)$$ ,NULL ,NULL ),
     ( 2 , NULL ,'Kiri Kaeshi',$$Cambio guardia$$ ,NULL ,NULL ),
     ( 200 , NULL ,'Shi Ho Soto Uke Gyakuzuki',$$Quattro direzioni$$ ,NULL ,NULL ),
     ( 250 , NULL ,'Kime Waza',$$Controllo$$ ,NULL ,NULL )
@@ -318,69 +331,137 @@ INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,note ,resource_url )
     ( 528 , 529 , 530, 'Still' , NULL , NULL )
 ;
 
----------------------------------
+ 
 
-INSERT INTO ski.Kata_inventory(id_kata,kata ,starting_leg) VALUES 
-(1,'test','sx')
+
+INSERT INTO ski.Kata_inventory(
+    id_kata ,
+    kata ,
+    serie ,
+    starting_leg ,
+    Note
+) VALUES 
+    ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , NULL ) ,
+    ( 2 , 'Heian Nidan' , 'Heian' , 'sx' , NULL ) ,
+    ( 3 , 'Heian Sandan' , 'Heian' , 'sx' , NULL ) ,
+    ( 4 , 'Heian Yondan' , 'Heian' , 'sx' , NULL ) ,
+    ( 5 , 'Heian Godan' , 'Heian' , 'sx' , NULL ) ,
+    ( 6 , 'Bassai Dai' , 'Sentei' , 'dx' , NULL ) ,
+    ( 7 , 'Kanku Dai' , 'Sentei' , 'sx' , NULL ) ,
+    ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL ) ,
+    ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL ) 
 ;
 
-INSERT INTO ski.kata_sequence(id_sequence ,kata_id ,seq_num ,stand) VALUES
-(1 ,1 ,1 ,4),
-(2 ,1 ,2 ,4),
-(3 ,1 ,3 ,4)
-;
-
-INSERT INTO ski.combotecniche_kata (id ,arto ,technic ,technic_target) VALUES
-(1 ,'Braccio DX',19 ,1),
-(2 ,'Braccio SX',14 ,1),
-(2 ,'Gamba DX',41 ,1),
-(3 ,'Braccio DX',32 ,1)
-;
-
-<<<<<<< HEAD
-SELECT seq.id_sequence , seq.kata_id , seq.seq_num , seq.stand ,
---combo.arto , combo.technic , combo.technic_target
-json_agg(
-    json_build_object('arto',combo.arto),
-    json_build_object('tecnca',combo.technic)
-    )
-
---array_agg(combo.technic) as tecniche
-FROM ski.kata_sequence AS seq
-JOIN ski.combotecniche_kata AS combo
-ON seq.id_sequence = combo.id
---GROUP BY seq.id_sequence
-=======
-
-
-SELECT seq.id_sequence , seq.kata_id , seq.seq_num , seq.stand ,
---combo.arto , combo.technic , combo.technic_target
-json_agg(
-    json_build_object(
-        'Arto', combo.arto, 
-        'Tecnica', combo.technic,
-        'Name', combo.name,  
-        'Target', combo.technic_target
-    )
-)
-FROM ski.kata_sequence AS seq
-JOIN (
-    SELECT combo_raw.id,
-        combo_raw.arto ,
-        combo_raw.technic ,
-        combo_raw.technic_target ,
-        tech.name
-    FROM ski.combotecniche_kata AS combo_raw
-    JOIN ski.technics AS tech
-    ON combo_raw.technic = tech.id_technic
-) AS combo
-ON seq.id_sequence = combo.id
-GROUP BY seq.id_sequence
-ORDER BY seq.seq_num
->>>>>>> my-new-branch
+INSERT INTO ski.kata_sequence(
+    id_sequence ,
+    kata_id ,
+    seq_num ,
+    stand_id ,
+    side ,
+    embusen  ,
+    facing ,
+    kiai ,
+    notes
+) VALUES
+    ( 1 , 1 , 0, 1 ,  'frontal'  , (0,0) , 'N' , false , NULL ) ,
+    ( 2 , 1 , 1, 4 ,  'sx'  , (0,0) , 'O' , false , NULL ) ,
+    ( 3 , 1 , 2, 4 ,  'dx'  , (-1,0) , 'O' , false , NULL ) ,
+    ( 4 , 1 , 3, 4 ,  'dx'  , (-2,0) , 'E' , false , NULL ) ,
+    ( 5 , 1 , 4, 16 ,  'dx'  , (0,0) , 'E' , false , NULL ) ,
+    ( 6 , 1 , 5, 4 ,  'sx'  , (1,0) , 'E' , false , NULL ) ,
+    ( 7 , 1 , 6, 4 ,  'sx'  , (0,0) , 'N' , false , NULL ) ,
+    ( 8 , 1 , 7, 4 ,  'sx'  , (0,0) , 'N' , false , NULL ) ,
+    ( 9 , 1 , 8, 4 ,  'dx'  , (0,1) , 'N' , false , NULL ) ,
+    ( 10 , 1 , 9, 4 ,  'sx'  , (0,2) , 'N' , false , NULL ) ,
+    ( 11 , 1 , 10, 4 ,  'dx'  , (0,3) , 'N' , true , NULL ) ,
+    ( 12 , 1 , 11, 4 ,  'sx'  , (0,3) , 'E' , false , NULL ) ,
+    ( 13 , 1 , 12, 4 ,  'dx'  , (1,3) , 'E' , false , NULL ) ,
+    ( 14 , 1 , 13, 4 ,  'dx'  , (0,3) , 'O' , false , NULL ) ,
+    ( 15 , 1 , 14, 4 ,  'sx'  , (-1,3) , 'O' , false , NULL ) ,
+    ( 16 , 1 , 15, 4 ,  'sx'  , (0,3) , 'S' , false , NULL ) ,
+    ( 17 , 1 , 16, 4 ,  'dx'  , (0,2) , 'S' , false , NULL ) ,
+    ( 18 , 1 , 17, 4 ,  'sx'  , (0,1) , 'S' , false , NULL ) ,
+    ( 19 , 1 , 18, 4 ,  'dx'  , (0,0) , 'S' , false , NULL ) ,
+    ( 20 , 1 , 19, 5 ,  'sx'  , (0,0) , 'O' , false , NULL ) ,
+    ( 21 , 1 , 20, 5 ,  'dx'  , (1,1) , 'NO' , false , NULL ) ,
+    ( 22 , 1 , 21, 5 ,  'dx'  , (0,0) , 'E' , false , NULL ) ,
+    ( 23 , 1 , 22, 5 ,  'sx'  , (1,1) , 'NE' , true , NULL ) 
 ;
 
 
+INSERT INTO ski.kata_sequence_waza (
+    sequence_id ,
+    arto ,
+    technic_id ,
+    technic_target_id
+) VALUES
+    ( 1 , 'Braccia' , 0, NULL ),
+    ( 2 , 'Braccio SX' , 19, 2 ),
+    ( 3 , 'Braccio DX' , 51, 2 ),
+    ( 4 , 'Braccio DX' , 19, 2 ),
+    ( 5 , 'Braccio DX' , 72, 2 ),
+    ( 6 , 'Braccio SX' , 51, 2 ),
+    ( 7 , 'Braccio SX' , 19, 2 ),
+    ( 8 , 'Braccio SX' , 85, 1 ),
+    ( 9 , 'Braccio DX' , 11, 1 ),
+    ( 10 , 'Braccio SX' , 11, 1 ),
+    ( 11 , 'Braccio DX' , 11, 1 ),
+    ( 12 , 'Braccio SX' , 19, 2 ),
+    ( 13 , 'Braccio DX' , 51, 2 ),
+    ( 14 , 'Braccio DX' , 19, 2 ),
+    ( 15 , 'Braccio SX' , 51, 2 ),
+    ( 16 , 'Braccio SX' , 19, 2 ),
+    ( 17 , 'Braccio DX' , 51, 2 ),
+    ( 18 , 'Braccio SX' , 51, 2 ),
+    ( 19 , 'Braccio DX' , 51, 2 ),
+    ( 20 , 'Braccio SX' , 58, 1 ),
+    ( 21 , 'Braccio DX' , 57, 1 ),
+    ( 22 , 'Braccio DX' , 58, 1 ),
+    ( 23 , 'Braccio SX' , 57, 1 )
+;
+
+INSERT INTO ski.kata_tx(
+    --id_tx ,
+    from_seq ,
+    to_seq ,
+    tempo ,
+    direction 
+) VALUES
+    ( 1 , 2 , 'Fast' , 'sx' ),
+    ( 2 , 3 , 'Fast' , 'frontal' ),
+    ( 3 , 4 , 'Normal' , 'dx' ),
+    ( 4 , 5 , 'Slow' , 'frontal' ),
+    ( 5 , 6 , 'Normal' , 'frontal' ),
+    ( 6 , 7 , 'Normal' , 'sx' ),
+    ( 7 , 8 , 'Slow' , 'frontal' ),
+    ( 8 , 9 , 'Normal' , 'frontal' ),
+    ( 9 , 10 , 'Normal' , 'frontal' ),
+    ( 10 , 11 , 'Fast' , 'frontal' ),
+    ( 11 , 12 , 'Normal' , 'sx' ),
+    ( 12 , 13 , 'Fast' , 'frontal' ),
+    ( 13 , 14 , 'Normal' , 'dx' ),
+    ( 14 , 15 , 'Fast' , 'frontal' ),
+    ( 15 , 16 , 'Slow' , 'sx' ),
+    ( 16 , 17 , 'Normal' , 'frontal' ),
+    ( 17 , 18 , 'Normal' , 'frontal' ),
+    ( 18 , 19 , 'Fast' , 'frontal' ),
+    ( 19 , 20 , 'Normal' , 'sx' ),
+    ( 20 , 21 , 'Fast' , 'dx' ),
+    ( 21 , 22 , 'Normal' , 'dx' ),
+    ( 22 , 23 , 'Fast' , 'sx' )
+;
+
+
+WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
+SELECT id_tx SMALLINT , 
+    from_seq SMALLINT ,
+    to_seq SMALLINT ,
+    tempo  ski.tempo ,
+    direction direction ski.sides
+FROM ski.kata_tx
+WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
+OR to_seq IN (SELECT id_sequence FROM relevantseq)
+;
 
 
 
