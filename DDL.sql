@@ -13,7 +13,16 @@ CREATE TYPE ski.embusen_points AS (
     y SMALLINT
 ); -- Definisce la posizione nello spazio come piano cartesiano con 0 in posizione del saluto
 
-CREATE TYPE ski.arti AS ENUM('Braccio DX','Braccio SX','Braccia','Gamba DX','Gamba SX','Gambe','NA');
+CREATE TYPE ski.arti AS ENUM(
+    'Braccio DX',
+    'Braccio SX',
+    'Braccia',
+    'Gamba DX',
+    'Gamba SX',
+    'Gambe',
+    'NA'
+);
+CREATE TYPE ski.beltcolor AS ENUM('bianco','giallo','arancio','verde','blu','nero'); -- Colori delle cinture
 
 CREATE TYPE ski.absolute_directions AS ENUM(
     'N',
@@ -26,6 +35,8 @@ CREATE TYPE ski.absolute_directions AS ENUM(
     'NO'
 ); -- Direzione assoluta rispetto al saluto inizale
 
+--                                      DOMANINS TABLE
+
 CREATE TABLE ski.targets(
     id_target SMALLSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -33,17 +44,23 @@ CREATE TABLE ski.targets(
     description TEXT,
     notes TEXT,
     resource_url TEXT,
+    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
+    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_targetname UNIQUE(name)
 ); -- parti del corpo colpite
 
-CREATE TABLE ski.strikingparts(
-    id_target SMALLSERIAL PRIMARY KEY,
+CREATE TABLE ski.strikingparts( 
+    id_part SMALLSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    translation VARCHAR(255)
+    translation VARCHAR(255),
     description TEXT,
     notes TEXT,
     resource_url TEXT,
-    CONSTRAINT unique_technicname UNIQUE(name)
+    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name) || to_tsvector('simple',translation)) STORED,
+    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    CONSTRAINT unique_strikingpartsname UNIQUE(name)
 ); -- parti del corpo che colpiscono
 
 CREATE TABLE ski.technics(
@@ -54,6 +71,9 @@ CREATE TABLE ski.technics(
     description TEXT,
     notes TEXT,
     resource_url TEXT,
+    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
+    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_technicname UNIQUE(name)
 ); --Inventario delle tecniche
 
@@ -63,20 +83,30 @@ CREATE TABLE ski.stands(
     -- aka VARCHAR(255) , -- altoro nome con la quale è conosciuta
     description TEXT,
     illustration_url TEXT,
-    notes TEXT
+    notes TEXT,
+    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
+    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    CONSTRAINT unique_standname UNIQUE(name)
 ); --Inventario delle posizioni
 
 CREATE TABLE ski.grades(
     id_grade SMALLSERIAL PRIMARY KEY,
     gtype ski.grade_type NOT NULL,
     grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL ,
+    color ski.beltcolor,
     CONSTRAINT unique_grade UNIQUE (gtype, grade)
 ); -- forma normale della sequenza di gradi Kiu e Dan
+
+
+--                                      COMPENDIUM TABLES
 
 CREATE TABLE ski.kihon_inventory(
     id_inventory SMALLSERIAL PRIMARY KEY,
     grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
     number SMALLINT NOT NULL,
+    notes TEXT,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_kihoninventory UNIQUE (grade_id, number)
 ); -- Inventario in forma normale con i kihon per ciascuna cintura
 
@@ -88,8 +118,9 @@ CREATE TABLE ski.kihon_sequences(
     techinc SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
     gyaku bool,
     target_hgt ski.target_hgt ,
-    note TEXT ,
+    notes TEXT ,
     resource_url TEXT,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_kihonsequence UNIQUE (inventory_id, seq_num)
 ); --Sequenza delle tecniche che compongono i kihon
 
@@ -98,8 +129,9 @@ CREATE TABLE ski.kihon_tx(
     from_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence), 
     to_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
     movement ski.movements ,
-    note TEXT,
+    notes TEXT,
     resource_url TEXT,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_kihontx UNIQUE (from_seq, to_seq)
 ); --Passaggio da una tecnica all' altra 
 
@@ -108,7 +140,7 @@ CREATE TABLE ski.Kata_inventory(
     kata VARCHAR(255) NOT NULL,
     serie ski.kata_series,
     starting_leg ski.sides NOT NULL,
-    Note TEXT,
+    notes TEXT,
     resource_url TEXT,
     CONSTRAINT unique_kata UNIQUE (kata)
 ); -- Inventario in forma normale dei kata
@@ -118,12 +150,14 @@ CREATE TABLE ski.kata_sequence(
     kata_id SMALLSERIAL NOT NULL REFERENCES ski.Kata_inventory(id_kata),
     seq_num SMALLSERIAL NOT NULL,
     stand_id SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
+    speed ski.tempo ,
     side ski.sides, -- lato della guardia
     embusen ski.embusen_points ,
     facing ski.absolute_directions, -- direzioni cardinali rispetto all' inizio
     kiai bool,
     notes TEXT,
-    resource_url TEXT, 
+    resource_url TEXT,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_kata_seq UNIQUE (kata_id, seq_num)
 ); -- Sequenza in forma normale del kata
 --le tecniche da eseguire sono nella tabella ski.kata_sequence_waza per rispettare forma normale potendo essercene più d'una.
@@ -134,19 +168,22 @@ CREATE TABLE ski.kata_sequence_waza (
     sequence_id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
     arto ski.arti,
     technic_id SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
+    strikingpart_id SMALLINT REFERENCES ski.strikingparts(id_part),
     technic_target_id SMALLINT REFERENCES ski.targets(id_target),
-    notes TEXT
+    notes TEXT,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED
 );
 
-CREATE TABLE ski.kata_tx(
+CREATE TABLE ski.kata_tx (
     id_tx SMALLSERIAL PRIMARY KEY ,
     from_seq SMALLINT NOT NULL ,
     to_seq SMALLINT NOT NULL ,
     tempo ski.tempo ,
     direction ski.sides ,
     intermediate_stand SMALLINT REFERENCES ski.stands(id_stand),
-    note TEXT,
-    resource_url TEXT 
+    notes TEXT,
+    resource_url TEXT ,
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED
 );
 
 
@@ -220,35 +257,38 @@ RETURNS TABLE(
     id_sequence SMALLINT ,
     kata_id SMALLINT ,
     seq_num SMALLINT ,
+    stand_id SMALLINT ,
     posizione TEXT ,
     guardia ski.sides ,
     facing ski.absolute_directions ,
     Tecniche JSON ,
     embusen ski.embusen_points ,
-    kiai BOOLEAN 
+    kiai BOOLEAN ,
+    notes TEXT
 )
 language sql
 as $$
 SELECT seq.id_sequence 
     , seq.kata_id 
     , seq.seq_num 
-    --, seq.stand_id
+    , seq.stand_id
     , MAX(stands.name) as posizione
     , seq.side AS guardia
     , seq.facing
     , json_agg(
         json_build_object(
-            --'sequence_id' , combo.sequence_id 
-            'arto' , combo.arto 
-            --, 'technic_id' , combo.technic_id 
+            'sequence_id' , combo.sequence_id 
+            , 'arto' , combo.arto 
+            , 'technic_id' , combo.technic_id 
             , 'Tecnica' , combo.technic_name 
-            --, 'technic_target_id' , combo.technic_target_id 
+            , 'technic_target_id' , combo.technic_target_id 
             , 'Obiettivo' , combo.target_name 
-            --, 'notes' , combo.notes 
+            , 'waza_note' , combo.waza_note
         )
     ) AS Tecniche
     , seq.embusen
     , seq.kiai
+    , seq.notes
 FROM ski.kata_sequence AS seq
 JOIN (
     SELECT combo_raw.id_kswaza,
@@ -258,7 +298,8 @@ JOIN (
         combo_raw.technic_target_id,
         combo_raw.notes ,
         tech.name AS technic_name,
-        targets.name  AS target_name
+        targets.name  AS target_name,
+        combo_raw.notes AS waza_note
     FROM ski.kata_sequence_waza AS combo_raw
     JOIN ski.technics AS tech
     ON combo_raw.technic_id = tech.id_technic
@@ -281,7 +322,8 @@ RETURNS TABLE(
     from_seq SMALLINT ,
     to_seq SMALLINT ,
     tempo  ski.tempo ,
-    direction ski.sides
+    direction ski.sides,
+    notes TEXT
 )
 language sql
 as $$
@@ -290,10 +332,119 @@ SELECT id_tx  ,
     from_seq ,
     to_seq ,
     tempo ,
-    direction
+    direction,
+    notes
 FROM ski.kata_tx
 WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
 OR to_seq IN (SELECT id_sequence FROM relevantseq)
 ;
 $$;
 --SELECT * FROM ski.get_katatx(1);
+
+CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
+RETURNS TABLE(
+    id SMALLINT , 
+    name_rank FLOAT,
+    description_rank FLOAT , 
+    notes_rank FLOAT
+)
+language sql
+as $$
+WITH tsearch AS (
+    SELECT id_target AS id ,
+        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
+        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
+        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
+    FROM ski.targets
+)
+SELECT id ,
+    name_rank ,    
+    description_rank,
+    notes_rank
+FROM tsearch
+WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+;
+$$
+;
+
+CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
+RETURNS TABLE(
+    id SMALLINT , 
+    name_rank FLOAT,
+    description_rank FLOAT , 
+    notes_rank FLOAT
+)
+language sql
+as $$
+WITH tsearch AS (
+    SELECT id_technic AS id ,
+        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
+        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
+        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
+    FROM ski.technics
+)
+SELECT id ,
+    name_rank ,    
+    description_rank,
+    notes_rank
+FROM tsearch
+WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+;
+$$
+;
+
+CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
+RETURNS TABLE(
+    id SMALLINT , 
+    name_rank FLOAT,
+    description_rank FLOAT , 
+    notes_rank FLOAT
+)
+language sql
+as $$
+WITH tsearch AS (
+    SELECT id_stand AS id ,
+        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
+        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
+        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
+    FROM ski.stands
+)
+SELECT id ,
+    name_rank ,    
+    description_rank,
+    notes_rank
+FROM tsearch
+WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+;
+$$
+;
+
+CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
+RETURNS TABLE(
+    id SMALLINT , 
+    name_rank FLOAT,
+    description_rank FLOAT , 
+    notes_rank FLOAT
+)
+language sql
+as $$
+WITH tsearch AS (
+    SELECT id_part AS id ,
+        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
+        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
+        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
+    FROM ski.strikingparts
+)
+SELECT id ,
+    name_rank ,    
+    description_rank,
+    notes_rank
+FROM tsearch
+WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+;
+$$
+;

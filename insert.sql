@@ -258,7 +258,7 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
 ;
 
 
-INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techinc,gyaku,target_hgt,note,resource_url) VALUES 
+INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techinc,gyaku,target_hgt,notes,resource_url) VALUES 
     ( 456 ,91 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
     ( 457 ,91 ,1,4 , 70 ,'false' ,'Chudan' , NULL , NULL ),
     ( 458 ,91 ,2,4 , 11 ,'true' ,'Chudan' , NULL , NULL ),
@@ -300,7 +300,7 @@ INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techin
 ;
 
 
-INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,note ,resource_url ) VALUES
+INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,notes ,resource_url ) VALUES
     ( 455 , 456 , 457, 'Fwd' , NULL , NULL ),
     ( 456 , 457 , 458, 'Bkw' , NULL , NULL ),
     ( 457 , 458 , 459, 'Still' , NULL , NULL ),
@@ -339,7 +339,7 @@ INSERT INTO ski.Kata_inventory(
     kata ,
     serie ,
     starting_leg ,
-    Note
+    notes
 ) VALUES 
     ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , NULL ) ,
     ( 2 , 'Heian Nidan' , 'Heian' , 'sx' , NULL ) ,
@@ -452,16 +452,6 @@ INSERT INTO ski.kata_tx(
 ;
 
 
-WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
-SELECT id_tx SMALLINT , 
-    from_seq SMALLINT ,
-    to_seq SMALLINT ,
-    tempo  ski.tempo ,
-    direction direction ski.sides
-FROM ski.kata_tx
-WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
-OR to_seq IN (SELECT id_sequence FROM relevantseq)
-;
 
 
 
