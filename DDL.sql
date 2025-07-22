@@ -1,12 +1,43 @@
 CREATE SCHEMA ski;
 
-CREATE TYPE ski.grade_type AS ENUM ('kyu','dan');
-CREATE TYPE ski.sides AS ENUM ('sx','frontal','dx');
-CREATE TYPE ski.movements AS ENUM('Fwd','Still','Bkw');
-CREATE TYPE ski.kata_series AS ENUM ('Heian','Tekki','Sentei');
-CREATE TYPE ski.target_hgt AS ENUM('Jodan','Chudan','Gedan');
-CREATE TYPE ski.waza_type AS ENUM('Uke','Uchi','Geri','NA','_');
-CREATE TYPE ski.tempo AS ENUM('Legato','Fast','Normal','Slow','Breath');
+CREATE TYPE ski.grade_type AS ENUM (
+    'kyu',
+    'dan'
+);
+CREATE TYPE ski.sides AS ENUM (
+    'sx',
+    'frontal',
+    'dx'
+);
+CREATE TYPE ski.movements AS ENUM(
+    'Fwd',
+    'Still',
+    'Bkw'
+);
+CREATE TYPE ski.kata_series AS ENUM (
+    'Heian',
+    'Tekki',
+    'Sentei'
+);
+CREATE TYPE ski.target_hgt AS ENUM(
+    'Jodan',
+    'Chudan',
+    'Gedan'
+);
+CREATE TYPE ski.waza_type AS ENUM(
+    'Uke',
+    'Uchi',
+    'Geri',
+    'NA',
+    '_'
+);
+CREATE TYPE ski.tempo AS ENUM(
+    'Legato',
+    'Fast',
+    'Normal',
+    'Slow',
+    'Breath'
+);
 
 CREATE TYPE ski.embusen_points AS (
     x SMALLINT,
@@ -22,7 +53,15 @@ CREATE TYPE ski.arti AS ENUM(
     'Gambe',
     'NA'
 );
-CREATE TYPE ski.beltcolor AS ENUM('bianco','giallo','arancio','verde','blu','nero'); -- Colori delle cinture
+
+CREATE TYPE ski.beltcolor AS ENUM(
+    'bianco',
+    'giallo',
+    'arancio',
+    'verde',
+    'blu',
+    'nero'
+); -- Colori delle cinture
 
 CREATE TYPE ski.absolute_directions AS ENUM(
     'N',
@@ -130,6 +169,7 @@ CREATE TABLE ski.kihon_tx(
     to_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
     movement ski.movements ,
     notes TEXT,
+    tempo ski.tempo ,
     resource_url TEXT,
     tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
     CONSTRAINT unique_kihontx UNIQUE (from_seq, to_seq)
@@ -191,260 +231,356 @@ CREATE TABLE ski.kata_tx (
 -- FUNZIONI AUSILIARIE PER RECUPERARE LE INFO
 
 CREATE OR REPLACE FUNCTION ski.get_gradeid(
-_grade NUMERIC,
-_type VARCHAR
-)
-returns NUMERIC
-language sql
-as $$
-SELECT id_grade 
-FROM ski.grades 
-WHERE grade = _grade
-AND gtype = _type::ski.grade_type
+    _grade NUMERIC,
+    _type VARCHAR
+    )
+    returns NUMERIC
+    language sql
+    as $$
+        SELECT id_grade 
+        FROM ski.grades 
+        WHERE grade = _grade
+        AND gtype = _type::ski.grade_type
+        ;
+    $$
 ;
-$$;
 --SELECT ski.get_gradeid(1,'dan');
 
 CREATE OR REPLACE FUNCTION ski.get_kihons(
-_grade NUMERIC,
-_type VARCHAR
-)
-RETURNS TABLE(
-    id_inventory NUMERIC ,
-    grade_id NUMERIC ,
-    number NUMERIC
-)
-LANGUAGE SQL
-AS $$
-SELECT id_inventory,grade_id, number FROM ski.kihon_inventory WHERE grade_id = ski.get_gradeid(_grade,_type);
-$$;
+    _grade NUMERIC,
+    _type VARCHAR
+    )
+    RETURNS TABLE(
+        id_inventory NUMERIC ,
+        grade_id NUMERIC ,
+        number NUMERIC
+    )
+    LANGUAGE SQL
+    AS $$
+        SELECT id_inventory,grade_id, number FROM ski.kihon_inventory WHERE grade_id = ski.get_gradeid(_grade,_type);
+    $$
+;
 
 --SELECT * FROM ski.get_kihons(1,'dan');
 
 CREATE OR REPLACE FUNCTION ski.get_kihonid(
-_gradeid NUMERIC,
-_num NUMERIC
-)
-returns NUMERIC
-LANGUAGE SQL
-AS $$
-SELECT id_inventory FROM ski.kihon_inventory WHERE grade_id = _gradeid AND number =_num;
+    _gradeid NUMERIC,
+    _num NUMERIC
+    )
+    returns NUMERIC
+    LANGUAGE SQL
+    AS $$
+    SELECT id_inventory FROM ski.kihon_inventory WHERE grade_id = _gradeid AND number =_num;
 $$;
 --SELECT ski.get_kihonid(1,'dan',1);
 
-CREATE OR REPLACE FUNCTION ski.get_technic_name(
-_technic_id NUMERIC
-)
-returns VARCHAR
-LANGUAGE SQL
-AS $$
-SELECT name FROM ski.technics WHERE id_technic = _technic_id;
-$$;
---Per mettere il nome della tecnica nell' output ma da evitare in favore della join
 
-CREATE OR REPLACE FUNCTION ski.get_stand_name(
-_stand_id NUMERIC
-)
-returns VARCHAR
-LANGUAGE SQL
-AS $$
-SELECT name FROM ski.stands WHERE id_stand = _stand_id;
-$$;
---Per mettere il nome della posizione nell' output ma da evitare in favore della join
+CREATE OR REPLACE FUNCTION ski.get_technic_info(
+    _technic_id NUMERIC
+    )
+    RETURNS TABLE(
+        id_technic SMALLINT,
+        waza ski.waza_type,
+        name TEXT,
+        description TEXT,
+        notes TEXT,
+        resource_url TEXT
+    )
+    LANGUAGE SQL
+    AS $$
+        SELECT id_technic ,
+            waza ,
+            name ,
+            description ,
+            notes ,
+            resource_url
+        FROM ski.technics
+        WHERE id_technic = _technic_id
+    $$
+;
+-- SELECT ski.get_technic_info(12);
+
+CREATE OR REPLACE FUNCTION ski.get_stand_info(
+    _stand_id NUMERIC
+    )
+    RETURNS TABLE(
+        id_stand SMALLINT,
+        name TEXT,
+        description TEXT,
+        illustration_url TEXT,
+        notes TEXT
+    )
+    LANGUAGE SQL
+    AS $$
+        SELECT id_stand SMALLINT,
+            name TEXT,
+            description TEXT,
+            illustration_url TEXT,
+            notes TEXT
+        FROM ski.stands
+        WHERE id_stand = _stand_id
+    $$
+;
+
+
+CREATE OR REPLACE FUNCTION ski.get_strikingparts_info(
+    _id_part NUMERIC
+    )
+    RETURNS TABLE(
+        id_part SMALLINT,
+        name TEXT,
+        translation TEXT,
+        description TEXT,
+        notes TEXT,
+        resource_url TEXT
+    )
+    LANGUAGE SQL
+    AS $$
+        SELECT id_part,
+            name ,
+            translation ,
+            description ,
+            notes ,
+            resource_url 
+        FROM ski.strikingparts
+        WHERE id_part = _id_part
+    $$
+;
+
+CREATE OR REPLACE FUNCTION ski.get_target_info(
+    _id_target NUMERIC
+    )
+    RETURNS TABLE(
+        id_target SMALLINT,
+        name TEXT,
+        original_name TEXT,
+        description TEXT,
+        notes TEXT,
+        resource_url TEXT
+    )
+    LANGUAGE SQL
+    AS $$
+        SELECT id_target ,
+            name ,
+            original_name ,
+            description ,
+            notes ,
+            resource_url 
+        FROM ski.targets
+        WHERE id_target = _id_target
+    $$
+;
+
 
 CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id NUMERIC)
-RETURNS TABLE(
-    id_sequence SMALLINT ,
-    kata_id SMALLINT ,
-    seq_num SMALLINT ,
-    stand_id SMALLINT ,
-    posizione TEXT ,
-    guardia ski.sides ,
-    facing ski.absolute_directions ,
-    Tecniche JSON ,
-    embusen ski.embusen_points ,
-    kiai BOOLEAN ,
-    notes TEXT
-)
-language sql
-as $$
-SELECT seq.id_sequence 
-    , seq.kata_id 
-    , seq.seq_num 
-    , seq.stand_id
-    , MAX(stands.name) as posizione
-    , seq.side AS guardia
-    , seq.facing
-    , json_agg(
-        json_build_object(
-            'sequence_id' , combo.sequence_id 
-            , 'arto' , combo.arto 
-            , 'technic_id' , combo.technic_id 
-            , 'Tecnica' , combo.technic_name 
-            , 'technic_target_id' , combo.technic_target_id 
-            , 'Obiettivo' , combo.target_name 
-            , 'waza_note' , combo.waza_note
-        )
-    ) AS Tecniche
-    , seq.embusen
-    , seq.kiai
-    , seq.notes
-FROM ski.kata_sequence AS seq
-JOIN (
-    SELECT combo_raw.id_kswaza,
-        combo_raw.sequence_id ,
-        combo_raw.arto,
-        combo_raw.technic_id ,
-        combo_raw.technic_target_id,
-        combo_raw.notes ,
-        tech.name AS technic_name,
-        targets.name  AS target_name,
-        combo_raw.notes AS waza_note
-    FROM ski.kata_sequence_waza AS combo_raw
-    JOIN ski.technics AS tech
-    ON combo_raw.technic_id = tech.id_technic
-    LEFT JOIN ski.targets as targets
-    ON combo_raw.technic_target_id = targets.id_target
-) AS combo
-ON seq.id_sequence = combo.sequence_id
-LEFT JOIN ski.stands as stands
-ON seq.stand_id = stands.id_stand
-WHERE seq.kata_id = _kata_id
-GROUP BY seq.id_sequence
-ORDER BY seq.seq_num
+    RETURNS TABLE(
+        id_sequence SMALLINT ,
+        kata_id SMALLINT ,
+        seq_num SMALLINT ,
+        stand_id SMALLINT ,
+        posizione TEXT ,
+        guardia ski.sides ,
+        facing ski.absolute_directions ,
+        Tecniche JSON ,
+        embusen ski.embusen_points ,
+        kiai BOOLEAN ,
+        notes TEXT
+    )
+    language sql
+    as $$
+        SELECT seq.id_sequence 
+            , seq.kata_id 
+            , seq.seq_num 
+            , seq.stand_id
+            , MAX(stands.name) as posizione
+            , seq.side AS guardia
+            , seq.facing
+            , json_agg(
+                json_build_object(
+                    'sequence_id' , combo.sequence_id 
+                    , 'arto' , combo.arto 
+                    , 'technic_id' , combo.technic_id 
+                    , 'Tecnica' , combo.technic_name 
+                    , 'technic_target_id' , combo.technic_target_id 
+                    , 'Obiettivo' , combo.target_name 
+                    , 'waza_note' , combo.waza_note
+                )
+            ) AS Tecniche
+            , seq.embusen
+            , seq.kiai
+            , seq.notes
+        FROM ski.kata_sequence AS seq
+        JOIN (
+            SELECT combo_raw.id_kswaza,
+                combo_raw.sequence_id ,
+                combo_raw.arto,
+                combo_raw.technic_id ,
+                combo_raw.technic_target_id,
+                combo_raw.notes ,
+                tech.name AS technic_name,
+                targets.name  AS target_name,
+                combo_raw.notes AS waza_note
+            FROM ski.kata_sequence_waza AS combo_raw
+            JOIN ski.technics AS tech
+            ON combo_raw.technic_id = tech.id_technic
+            LEFT JOIN ski.targets as targets
+            ON combo_raw.technic_target_id = targets.id_target
+        ) AS combo
+        ON seq.id_sequence = combo.sequence_id
+        LEFT JOIN ski.stands as stands
+        ON seq.stand_id = stands.id_stand
+        WHERE seq.kata_id = _kata_id
+        GROUP BY seq.id_sequence
+        ORDER BY seq.seq_num
+        ;
+    $$
 ;
-$$;
 --SELECT * FROM ski.get_katasequence(1);
 
 CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id NUMERIC)
-RETURNS TABLE(
-    id_tx SMALLINT , 
-    from_seq SMALLINT ,
-    to_seq SMALLINT ,
-    tempo  ski.tempo ,
-    direction ski.sides,
-    notes TEXT
-)
-language sql
-as $$
-WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
-SELECT id_tx  , 
-    from_seq ,
-    to_seq ,
-    tempo ,
-    direction,
-    notes
-FROM ski.kata_tx
-WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
-OR to_seq IN (SELECT id_sequence FROM relevantseq)
+    RETURNS TABLE(
+        id_tx SMALLINT , 
+        from_seq SMALLINT ,
+        to_seq SMALLINT ,
+        tempo  ski.tempo ,
+        direction ski.sides,
+        notes TEXT
+    )
+    language sql
+    as $$
+        WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
+        SELECT id_tx  , 
+            from_seq ,
+            to_seq ,
+            tempo ,
+            direction,
+            notes
+        FROM ski.kata_tx
+        WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
+        OR to_seq IN (SELECT id_sequence FROM relevantseq)
+        ;
+    $$
 ;
-$$;
 --SELECT * FROM ski.get_katatx(1);
 
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
-RETURNS TABLE(
-    id SMALLINT , 
-    name_rank FLOAT,
-    description_rank FLOAT , 
-    notes_rank FLOAT
-)
-language sql
-as $$
-WITH tsearch AS (
-    SELECT id_target AS id ,
-        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
-        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
-        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
-    FROM ski.targets
-)
-SELECT id ,
-    name_rank ,    
-    description_rank,
-    notes_rank
-FROM tsearch
-WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-;
-$$
+    RETURNS TABLE(
+        id SMALLINT , 
+        name_rank FLOAT,
+        description_rank FLOAT , 
+        notes_rank FLOAT
+    )
+    language sql
+    as $$
+        WITH tsearch AS (
+            SELECT id_target AS id ,
+                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
+                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
+                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
+            FROM ski.targets
+        )
+        SELECT id ,
+            name_rank ,    
+            description_rank,
+            notes_rank
+        FROM tsearch
+        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+        ;
+    $$
 ;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
-RETURNS TABLE(
-    id SMALLINT , 
-    name_rank FLOAT,
-    description_rank FLOAT , 
-    notes_rank FLOAT
-)
-language sql
-as $$
-WITH tsearch AS (
-    SELECT id_technic AS id ,
-        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
-        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
-        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
-    FROM ski.technics
-)
-SELECT id ,
-    name_rank ,    
-    description_rank,
-    notes_rank
-FROM tsearch
-WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-;
-$$
+    RETURNS TABLE(
+        id SMALLINT , 
+        name_rank FLOAT,
+        description_rank FLOAT , 
+        notes_rank FLOAT
+    )
+    language sql
+    as $$
+        WITH tsearch AS (
+            SELECT id_technic AS id ,
+                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
+                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
+                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
+            FROM ski.technics
+        )
+        SELECT id ,
+            name_rank ,    
+            description_rank,
+            notes_rank
+        FROM tsearch
+        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+        ;
+    $$
 ;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
-RETURNS TABLE(
-    id SMALLINT , 
-    name_rank FLOAT,
-    description_rank FLOAT , 
-    notes_rank FLOAT
-)
-language sql
-as $$
-WITH tsearch AS (
-    SELECT id_stand AS id ,
-        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
-        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
-        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
-    FROM ski.stands
-)
-SELECT id ,
-    name_rank ,    
-    description_rank,
-    notes_rank
-FROM tsearch
-WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-;
-$$
+    RETURNS TABLE(
+        id SMALLINT , 
+        name_rank FLOAT,
+        description_rank FLOAT , 
+        notes_rank FLOAT
+    )
+    language sql
+    as $$
+        WITH tsearch AS (
+            SELECT id_stand AS id ,
+                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
+                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
+                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
+            FROM ski.stands
+        )
+        SELECT id ,
+            name_rank ,    
+            description_rank,
+            notes_rank
+        FROM tsearch
+        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+        ;
+    $$
 ;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
-RETURNS TABLE(
-    id SMALLINT , 
-    name_rank FLOAT,
-    description_rank FLOAT , 
-    notes_rank FLOAT
-)
-language sql
-as $$
-WITH tsearch AS (
-    SELECT id_part AS id ,
-        ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search)) AS name_rank ,    
-        ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search)) AS description_rank,
-        ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search)) AS notes_rank
-    FROM ski.strikingparts
-)
-SELECT id ,
-    name_rank ,    
-    description_rank,
-    notes_rank
-FROM tsearch
-WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+    RETURNS TABLE(
+        id SMALLINT , 
+        name_rank FLOAT,
+        description_rank FLOAT , 
+        notes_rank FLOAT
+    )
+    language sql
+    as $$
+        WITH tsearch AS (
+            SELECT id_part AS id ,
+                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
+                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
+                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
+            FROM ski.strikingparts
+        )
+        SELECT id ,
+            name_rank ,    
+            description_rank,
+            notes_rank
+        FROM tsearch
+        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
+        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+        ;
+    $$
 ;
-$$
+
+CREATE OR REPLACE FUNCTION ski.ts_normalizer(
+    _name_rank FLOAT ,
+    _description_rank FLOAT ,
+    _notes_rank FLOAT ,
+    _name_wht FLOAT DEFAULT 1.0,
+    _description_wht FLOAT DEFAULT 0.75,
+    _notes_wht FLOAT DEFAULT 0.25
+    )
+    RETURNS FLOAT
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $funzione$
+        SELECT  coalesce(_name_rank, 0)*_name_wht + coalesce(_description_rank, 0)*_description_wht + coalesce(_notes_rank, 0)*_notes_wht;
+    $funzione$
 ;

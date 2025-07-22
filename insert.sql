@@ -1,14 +1,47 @@
-INSERT INTO  ski.targets(id_target ,name ,original_name ,description ) VALUES
-    ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ),
-    ( 2 , 'Chudan' ,$$Chudan$$ ,'Medio' ),
-    ( 3 , 'Gedan' ,$$Gedan$$ ,'Basso' ),
-    ( 4 , 'Testa' ,$$Atama$$ ,NULL ),
-    ( 5 , 'Faccia' ,$$Kao$$ ,NULL ),
-    ( 6 , 'Mascella' ,$$Ago$$ ,NULL ),
-    ( 7 , 'Collo Laterale' ,$$Kubi$$ ,NULL ),
-    ( 8 , 'Gola' ,$$Nodo$$ ,NULL ),
-    ( 9 , 'Torace' ,$$Mune$$ ,NULL )
+INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes ) VALUES
+    ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ,NULL ),
+    ( 2 , 'Chudan' ,$$Chudan$$ ,$$Medio$$ ,$$Poco sopra l'ombelico$$ ),
+    ( 3 , 'Gedan' ,$$Gedan$$ ,$$Basso$$ ,NULL ),
+    ( 4 , 'Testa' ,$$Atama$$ ,NULL ,NULL ),
+    ( 5 , 'Faccia' ,$$Kao$$ ,NULL ,NULL ),
+    ( 6 , 'Mascella' ,$$Ago$$ ,NULL ,$$Lato del volto sulla mascella$$ ),
+    ( 7 , 'Collo Laterale' ,$$Kubi$$ ,NULL ,NULL ),
+    ( 8 , 'Gola' ,$$Nodo$$ ,NULL ,NULL ),
+    ( 9 , 'Torace' ,$$Mune$$ ,NULL ,NULL )
 ;
+
+INSERT INTO ski.strikingparts( id_part ,name ,translation ,description ) VALUES 
+    ( 1 , 'Seiken' ,NULL ,$$Nocche indice e medio$$ ),
+    ( 2 , 'Koshi' ,NULL ,$$Radice delle dita dei piedi con dita alzate$$ ),
+    ( 3 , 'Empi' ,$$Gomito$$ ,$$Gomito$$ ),
+    ( 4 , 'Hirabasami' ,NULL ,$$incavo mano pollice indice$$ ),
+    ( 5 , 'Kumade' ,NULL ,$$palmo della mano$$ ),
+    ( 6 , 'Teisho' ,NULL ,$$palmo della mano all' attaccatura con l'avambraccio$$ ),
+    ( 7 , 'Gaiwan' ,NULL ,$$Avambraccio dal lato esterno / ulna$$ ),
+    ( 8 , 'Naiwan' ,NULL ,$$Avambraccio dal lato interno / radio$$ ),
+    ( 9 , 'Haiwan' ,NULL ,$$Avambraccio lato superiore$$ ),
+    ( 10 , 'Huraken' ,NULL ,$$Esterno della mano$$ ),
+    ( 11 , 'Keito' ,NULL ,$$Radice del police$$ ),
+    ( 12 , 'Kakuto' ,NULL ,$$polso esterno$$ ),
+    ( 13 , 'Tetsui' ,NULL ,$$parte bassa del pungo$$ ),
+    ( 14 , 'Washide' ,NULL ,$$Punta delle dita unite come a raccogliere$$ ),
+    ( 15 , 'Nakadaka Ken' ,NULL ,$$Medio leggermente fuoriuscito dal pugno$$ ),
+    ( 16 , 'Ippon Ken' ,NULL ,$$Indice leggermente fuoriuscito dal pugno$$ ),
+    ( 17 , 'Hihon Nukite' ,NULL ,$$Punta di indice e medio protesi$$ ),
+    ( 18 , 'Hiraken' ,NULL ,$$Falange intermedia della mano$$ ),
+    ( 19 , 'Ippon Nukite' ,NULL ,$$Punta dell'indice proteso$$ ),
+    ( 20 , 'Haito' ,NULL ,$$esterno della falange del pollice$$ ),
+    ( 21 , 'Haishu' ,NULL ,$$Palmo esterno mano$$ ),
+    ( 22 , 'Shuto' ,NULL ,$$Mano a taglio$$ ),
+    ( 23 , 'Nukite' ,NULL ,$$punta delle dita estese ed unite $$ ),
+    ( 24 , 'Sune' ,NULL ,$$tibbia$$ ),
+    ( 25 , 'Hiza' ,NULL ,$$Ginocchio$$ ),
+    ( 26 , 'Kakato' ,NULL ,$$Tallone$$ ),
+    ( 28 , 'Sokuto' ,NULL ,$$Esterno del piede$$ ),
+    ( 29 , 'teisoku' ,NULL ,$$Palmo del piede$$ ),
+    ( 30 , 'Tsumashi' ,NULL ,$$Dita del piede$$ ),
+    ( 31 , 'Heisoku' ,NULL ,$$Dorso del piede$$ );
+
 
 INSERT INTO ski.grades (id_grade,gtype,grade) VALUES 
     (1,'kyu',9),
@@ -30,28 +63,29 @@ INSERT INTO ski.grades (id_grade,gtype,grade) VALUES
 
 
 INSERT INTO ski.stands(id_stand ,name ,description ,illustration_url ,notes ) VALUES
-( 1 ,'Heiko dachi' ,$$Posizione naturale a gambe divaricate e piedi paralleli (YOI)$$ ,NULL ,NULL ),
-( 2 ,'Musubi dachi' ,$$Posizione naturale con talloni uniti e punte divaricate a 90° (nel saluto)$$ ,NULL ,NULL ),
-( 3 ,'Heisoku dachi' ,$$Posizione naturale con piedi e talloni uniti$$ ,NULL ,NULL ),
-( 4 ,'Zenkutsu dachi' ,$$Posizione frontale$$ ,NULL ,NULL ),
-( 5 ,'Kokutsu dachi' ,$$Posizione basata sulla gamba posteriore$$ ,NULL ,NULL ),
-( 6 ,'Kiba dachi' ,$$Posizione del cavaliere$$ ,NULL ,NULL ),
-( 7 ,'Shiko dachi' ,$$Posizione quadrata$$ ,NULL ,NULL ),
-( 8 ,'Hangetsu dachi' ,$$Posizione a Mezza luna$$ ,NULL ,NULL ),
-( 9 ,'Sochin dachi' ,$$Posizione consolidata$$ ,NULL ,'Detta anche Fudo dachi' ),
-( 10 ,'Neko ashi dachi' ,$$Posizione a gatto$$ ,NULL ,NULL ),
-( 11 ,'Sanchin dachi' ,$$Posizione a clessidra$$ ,NULL ,NULL ),
-( 12 ,'Hachinoji dachi' ,$$Posizione naturale a gambe divaricate e punte divaricate a 90°$$ ,NULL ,NULL ),
-( 13 ,'Hachiji dachi' ,$$Posizione naturale a gambe divaricate$$ ,NULL ,NULL ),
-( 14 ,'UchiHachiji dachi' ,$$Posizione a gambe divaricate e punte dei piedi all'interno$$ ,NULL ,NULL ),
-( 15 ,'Teiji dachi' ,$$Posizione naturale con i piedi a forma di T$$ ,NULL ,NULL ),
-( 16 ,'Renoji dachi' ,$$Posizione naturale con i piedi a forma di L$$ ,NULL ,NULL )
+    ( 1 ,'Heiko dachi' ,$$Posizione naturale a gambe divaricate e piedi paralleli (YOI)$$ ,NULL ,NULL ),
+    ( 2 ,'Musubi dachi' ,$$Posizione naturale con talloni uniti e punte divaricate a 90° (nel saluto)$$ ,NULL ,NULL ),
+    ( 3 ,'Heisoku dachi' ,$$Posizione naturale con piedi e talloni uniti$$ ,NULL ,NULL ),
+    ( 4 ,'Zenkutsu dachi' ,$$Posizione frontale$$ ,NULL ,NULL ),
+    ( 5 ,'Kokutsu dachi' ,$$Posizione basata sulla gamba posteriore$$ ,NULL ,'Peso 30% gamba anteriore e 70% al posteriore' ),
+    ( 6 ,'Kiba dachi' ,$$Posizione del cavaliere$$ ,NULL ,NULL ),
+    ( 7 ,'Shiko dachi' ,$$Posizione quadrata$$ ,NULL ,NULL ),
+    ( 8 ,'Hangetsu dachi' ,$$Posizione a Mezza luna$$ ,NULL ,NULL ),
+    ( 9 ,'Sochin dachi' ,$$Posizione consolidata$$ ,NULL ,'Detta anche Fudo dachi' ),
+    ( 10 ,'Neko ashi dachi' ,$$Posizione a gatto$$ ,NULL ,NULL ),
+    ( 11 ,'Sanchin dachi' ,$$Posizione a clessidra$$ ,NULL ,NULL ),
+    ( 12 ,'Hachinoji dachi' ,$$Posizione naturale a gambe divaricate e punte divaricate a 90°$$ ,NULL ,NULL ),
+    ( 13 ,'Hachiji dachi' ,$$Posizione naturale a gambe divaricate$$ ,NULL ,NULL ),
+    ( 14 ,'UchiHachiji dachi' ,$$Posizione a gambe divaricate e punte dei piedi all'interno$$ ,NULL ,NULL ),
+    ( 15 ,'Teiji dachi' ,$$Posizione naturale con i piedi a forma di T$$ ,NULL ,NULL ),
+    ( 16 ,'Renoji dachi' ,$$Posizione naturale con i piedi a forma di L$$ ,NULL ,NULL )
 ;
 
 
 INSERT INTO ski.technics(id_technic,waza ,name ,description ,notes ,resource_url ) VALUES
-    ( 0 , NULL ,'Neutra',$$$$ ,NULL ,NULL ),
+    ( 0 , NULL ,'Yoi',$$Posizione neutra ma pronta$$ ,$$Posizione di partenza neutra ma pronta per l'azione$$ ,NULL ),
     ( 1 , NULL ,'Guardia',$$$$ ,NULL ,NULL ),
+    ( 2 , NULL ,'Kiri Kaeshi',$$Cambio guardia$$ ,NULL ,NULL ),
     ( 10 , 'Uchi' ,'Age tsuki',$$Pugno diritto che sale dal basso verso l'alto$$ ,NULL ,NULL ),
     ( 11 , 'Uke' ,'Age uke',$$Parata crescente verso l'alto$$ ,NULL ,NULL ),
     ( 12 , 'Geri' ,'Ashi barai',$$Spazzata$$ ,NULL ,NULL ),
@@ -59,7 +93,7 @@ INSERT INTO ski.technics(id_technic,waza ,name ,description ,notes ,resource_url
     ( 14 , 'Uchi' ,'Chodan tsuki',$$Pugno sferrato verso la parte media del corpo dell'avversario$$ ,NULL ,NULL ),
     ( 15 , 'Uchi' ,'Choku tsuki',$$Pugno frontale sul posto$$ ,NULL ,NULL ),
     ( 16 , 'Uchi' ,'Enpi Uchi',$$Colpo di gomito$$ ,NULL ,NULL ),
-    ( 17 , 'Geri' ,'Fumikiri',$$Calcio tagliente (eseguito come uno YOKO GERI KEKOMI portato molto in basso: tibia, piede dell'avversario)$$ ,NULL ,NULL ),
+    ( 17 , 'Geri' ,'Fumikiri',$$Calcio tagliente verso il basso$$ ,$$eseguito come uno YOKO GERI KEKOMI portato molto in basso: tibia, piede dell'avversario$$ ,NULL ),
     ( 18 , 'Geri' ,'Fumikomi',$$Calcio pressante (eseguito con una traiettoria dall'alto verso il basso, trasferendo tutto il peso del corpo sul piede che colpisce)$$ ,NULL ,NULL ),
     ( 19 , 'Uke' ,'Gedan barai',$$Parata verso il basso$$ ,NULL ,NULL ),
     ( 20 , 'Uke' ,'Gedan Kake uke',$$Parata bassa uncinante (eseguita facendo compiere all'avambraccio un ampio movimento dall'esterno verso l'interno; normalmente è usata per parare un MAEGERI)$$ ,NULL ,NULL ),
@@ -128,7 +162,6 @@ INSERT INTO ski.technics(id_technic,waza ,name ,description ,notes ,resource_url
     ( 83 , 'Geri' ,'Yoko geri Kekomi',$$Calcio laterale spinto$$ ,NULL ,NULL ),
     ( 84 , 'Geri' ,'Yoko Tobi geri',$$Calcio volante laterale$$ ,NULL ,NULL ),
     ( 85 , 'Uke' ,'Age Shuto Uke',$$Parata a taglio verso l'alto (movimento che si fa con la mano opposta quando si esegue Age uke da studio)$$ ,NULL ,NULL ),
-    ( 2 , NULL ,'Kiri Kaeshi',$$Cambio guardia$$ ,NULL ,NULL ),
     ( 200 , NULL ,'Shi Ho Soto Uke Gyakuzuki',$$Quattro direzioni$$ ,NULL ,NULL ),
     ( 250 , NULL ,'Kime Waza',$$Controllo$$ ,NULL ,NULL )
 ;
@@ -259,38 +292,38 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
 
 
 INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techinc,gyaku,target_hgt,notes,resource_url) VALUES 
-    ( 456 ,91 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 456 ,91 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 457 ,91 ,1,4 , 70 ,'false' ,'Chudan' , NULL , NULL ),
     ( 458 ,91 ,2,4 , 11 ,'true' ,'Chudan' , NULL , NULL ),
     ( 459 ,91 ,3,4 , 26 ,'false' ,'Chudan' , NULL , NULL ),
     ( 460 ,91 ,4,4 , 40 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 466 ,92 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 466 ,92 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 467 ,92 ,1,4 , 36 ,'false' ,'Chudan' , NULL , NULL ),
     ( 468 ,92 ,2,9 , 52 ,'false' ,'Chudan' , NULL , NULL ),
     ( 469 ,92 ,3,4 , 64 ,'false' ,'Chudan' , NULL , NULL ),
     ( 470 ,92 ,4,4 , 76 ,'true' ,'Jodan' , NULL , NULL ),
-    ( 476 ,93 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 476 ,93 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 477 ,93 ,1,4 , 34 ,'false' ,'Chudan' , NULL , NULL ),
     ( 478 ,93 ,2,4 , 80 ,'false' ,'Chudan' , NULL , NULL ),
     ( 479 ,93 ,3,4 , 29 ,'false' ,'Chudan' , NULL , NULL ),
     ( 480 ,93 ,4,4 , 65 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 486 ,94 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 487 ,94 ,1,4 , 2 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 488 ,94 ,2,9 , 15 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 496 ,95 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 486 ,94 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 487 ,94 ,1,4 , 2 ,'false' ,'Chudan' , $$Il braccio del lato che è davanti deve essere proteso con il pugno formando una leggera curvatura.$$ , NULL ),
+    ( 488 ,94 ,2,9 , 15 ,'false' ,'Chudan' , $$Il braccio che era davanti resta in posizione avanzata formando una protezione, mantre viene sferrato il pugno.$$ , NULL ),
+    ( 496 ,95 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 497 ,95 ,1,4 , 35 ,'false' ,'Chudan' , NULL , NULL ),
     ( 498 ,95 ,2,4 , 14 ,'false' ,'Chudan' , NULL , NULL ),
     ( 499 ,95 ,3,4 , 18 ,'false' ,'Chudan' , NULL , NULL ),
     ( 500 ,95 ,4,4 , 50 ,'false' ,'Jodan' , NULL , NULL ),
-    ( 506 ,96 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 506 ,96 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 507 ,96 ,1,4 , 73 ,'false' ,'Chudan' , NULL , NULL ),
     ( 508 ,96 ,2,4 , 78 ,'false' ,'Chudan' , NULL , NULL ),
     ( 509 ,96 ,3,6 , 50 ,'false' ,'Chudan' , NULL , NULL ),
     ( 510 ,96 ,4,4 , 32 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 516 ,97 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 516 ,97 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 517 ,97 ,1,4 , 83 ,'false' ,'Chudan' , NULL , NULL ),
     ( 518 ,97 ,2,4 , 41 ,'false' ,'Chudan' , NULL , NULL ),
-    ( 526 ,98 ,0,4 , 1 ,'false' ,'Chudan' , NULL , NULL ),
+    ( 526 ,98 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 527 ,98 ,1,4 , 37 ,'false' ,'Chudan' , NULL , NULL ),
     ( 528 ,98 ,2,4 , 38 ,'false' ,'Chudan' , NULL , NULL ),
     ( 529 ,98 ,3,4 , 41 ,'false' ,'Chudan' , NULL , NULL ),
@@ -314,7 +347,7 @@ INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,notes ,resource_url 
     ( 477 , 478 , 479, 'Fwd' , NULL , NULL ),
     ( 478 , 479 , 480, 'Still' , NULL , NULL ),
     ( 485 , 486 , 487, 'Still' , NULL , NULL ),
-    ( 486 , 487 , 488, 'Still' , NULL , NULL ),
+    ( 486 , 487 , 488, 'Still' , $$Il braccio frontale resta avanzato$$ , NULL ),
     ( 495 , 496 , 497, 'Bkw' , NULL , NULL ),
     ( 496 , 497 , 498, 'Still' , NULL , NULL ),
     ( 497 , 498 , 499, 'Fwd' , NULL , NULL ),
@@ -324,7 +357,6 @@ INSERT INTO ski.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,notes ,resource_url 
     ( 507 , 508 , 509, 'Still' , NULL , NULL ),
     ( 508 , 509 , 510, 'Still' , NULL , NULL ),
     ( 515 , 516 , 517, 'Fwd' , NULL , NULL ),
-    ( 516 , 517 , 518, 'Still' , NULL , NULL ),
     ( 525 , 526 , 527, 'Still' , NULL , NULL ),
     ( 526 , 527 , 528, 'Still' , NULL , NULL ),
     ( 527 , 528 , 529, 'Still' , NULL , NULL ),
@@ -341,7 +373,7 @@ INSERT INTO ski.Kata_inventory(
     starting_leg ,
     notes
 ) VALUES 
-    ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , NULL ) ,
+    ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , $$Primo kata$$ ) ,
     ( 2 , 'Heian Nidan' , 'Heian' , 'sx' , NULL ) ,
     ( 3 , 'Heian Sandan' , 'Heian' , 'sx' , NULL ) ,
     ( 4 , 'Heian Yondan' , 'Heian' , 'sx' , NULL ) ,
@@ -349,7 +381,7 @@ INSERT INTO ski.Kata_inventory(
     ( 6 , 'Bassai Dai' , 'Sentei' , 'dx' , NULL ) ,
     ( 7 , 'Kanku Dai' , 'Sentei' , 'sx' , NULL ) ,
     ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL ) ,
-    ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL ) 
+    ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL )
 ;
 
 INSERT INTO ski.kata_sequence(
@@ -363,9 +395,9 @@ INSERT INTO ski.kata_sequence(
     kiai ,
     notes
 ) VALUES
-    ( 1 , 1 , 0, 1 ,  'frontal'  , (0,0) , 'N' , false , NULL ) ,
+    ( 1 , 1 , 0, 1 ,  'frontal'  , (0,0) , 'N' , false ,  'Preparare il piede destro'  ) ,
     ( 2 , 1 , 1, 4 ,  'sx'  , (0,0) , 'O' , false , NULL ) ,
-    ( 3 , 1 , 2, 4 ,  'dx'  , (-1,0) , 'O' , false , NULL ) ,
+    ( 3 , 1 , 2, 4 ,  'dx'  , (-1,0) , 'O' , false ,  'braccio sinistro spinge verso destra per caricare la rotazione'  ) ,
     ( 4 , 1 , 3, 4 ,  'dx'  , (-2,0) , 'E' , false , NULL ) ,
     ( 5 , 1 , 4, 16 ,  'dx'  , (0,0) , 'E' , false , NULL ) ,
     ( 6 , 1 , 5, 4 ,  'sx'  , (1,0) , 'E' , false , NULL ) ,
@@ -393,31 +425,32 @@ INSERT INTO ski.kata_sequence_waza (
     sequence_id ,
     arto ,
     technic_id ,
-    technic_target_id
+    technic_target_id,
+    notes
 ) VALUES
-    ( 1 , 'Braccia' , 0, NULL ),
-    ( 2 , 'Braccio SX' , 19, 2 ),
-    ( 3 , 'Braccio DX' , 51, 2 ),
-    ( 4 , 'Braccio DX' , 19, 2 ),
-    ( 5 , 'Braccio DX' , 72, 2 ),
-    ( 6 , 'Braccio SX' , 51, 2 ),
-    ( 7 , 'Braccio SX' , 19, 2 ),
-    ( 8 , 'Braccio SX' , 85, 1 ),
-    ( 9 , 'Braccio DX' , 11, 1 ),
-    ( 10 , 'Braccio SX' , 11, 1 ),
-    ( 11 , 'Braccio DX' , 11, 1 ),
-    ( 12 , 'Braccio SX' , 19, 2 ),
-    ( 13 , 'Braccio DX' , 51, 2 ),
-    ( 14 , 'Braccio DX' , 19, 2 ),
-    ( 15 , 'Braccio SX' , 51, 2 ),
-    ( 16 , 'Braccio SX' , 19, 2 ),
-    ( 17 , 'Braccio DX' , 51, 2 ),
-    ( 18 , 'Braccio SX' , 51, 2 ),
-    ( 19 , 'Braccio DX' , 51, 2 ),
-    ( 20 , 'Braccio SX' , 58, 1 ),
-    ( 21 , 'Braccio DX' , 57, 1 ),
-    ( 22 , 'Braccio DX' , 58, 1 ),
-    ( 23 , 'Braccio SX' , 57, 1 )
+    ( 1 , 'Braccia' , 0, NULL ,$$Attesa dell' hajime$$ ),
+    ( 2 , 'Braccio SX' , 19, 2 ,NULL ),
+    ( 3 , 'Braccio DX' , 51, 2 ,NULL ),
+    ( 4 , 'Braccio DX' , 19, 2 ,NULL ),
+    ( 5 , 'Braccio DX' , 72, 2 ,NULL ),
+    ( 6 , 'Braccio SX' , 51, 2 ,NULL ),
+    ( 7 , 'Braccio SX' , 19, 2 ,NULL ),
+    ( 8 , 'Braccio SX' , 85, 1 ,NULL ),
+    ( 9 , 'Braccio DX' , 11, 1 ,NULL ),
+    ( 10 , 'Braccio SX' , 11, 1 ,NULL ),
+    ( 11 , 'Braccio DX' , 11, 1 ,NULL ),
+    ( 12 , 'Braccio SX' , 19, 2 ,NULL ),
+    ( 13 , 'Braccio DX' , 51, 2 ,NULL ),
+    ( 14 , 'Braccio DX' , 19, 2 ,NULL ),
+    ( 15 , 'Braccio SX' , 51, 2 ,NULL ),
+    ( 16 , 'Braccio SX' , 19, 2 ,NULL ),
+    ( 17 , 'Braccio DX' , 51, 2 ,NULL ),
+    ( 18 , 'Braccio SX' , 51, 2 ,NULL ),
+    ( 19 , 'Braccio DX' , 51, 2 ,NULL ),
+    ( 20 , 'Braccio SX' , 58, 1 ,$$Devia un colpo$$ ),
+    ( 21 , 'Braccio DX' , 57, 1 ,NULL ),
+    ( 22 , 'Braccio DX' , 58, 1 ,NULL ),
+    ( 23 , 'Braccio SX' , 57, 1 ,NULL )
 ;
 
 INSERT INTO ski.kata_tx(
@@ -425,39 +458,32 @@ INSERT INTO ski.kata_tx(
     from_seq ,
     to_seq ,
     tempo ,
-    direction 
+    direction,
+    notes 
 ) VALUES
-    ( 1 , 2 , 'Fast' , 'sx' ),
-    ( 2 , 3 , 'Fast' , 'frontal' ),
-    ( 3 , 4 , 'Normal' , 'dx' ),
-    ( 4 , 5 , 'Slow' , 'frontal' ),
-    ( 5 , 6 , 'Normal' , 'frontal' ),
-    ( 6 , 7 , 'Normal' , 'sx' ),
-    ( 7 , 8 , 'Slow' , 'frontal' ),
-    ( 8 , 9 , 'Normal' , 'frontal' ),
-    ( 9 , 10 , 'Normal' , 'frontal' ),
-    ( 10 , 11 , 'Fast' , 'frontal' ),
-    ( 11 , 12 , 'Normal' , 'sx' ),
-    ( 12 , 13 , 'Fast' , 'frontal' ),
-    ( 13 , 14 , 'Normal' , 'dx' ),
-    ( 14 , 15 , 'Fast' , 'frontal' ),
-    ( 15 , 16 , 'Slow' , 'sx' ),
-    ( 16 , 17 , 'Normal' , 'frontal' ),
-    ( 17 , 18 , 'Normal' , 'frontal' ),
-    ( 18 , 19 , 'Fast' , 'frontal' ),
-    ( 19 , 20 , 'Normal' , 'sx' ),
-    ( 20 , 21 , 'Fast' , 'dx' ),
-    ( 21 , 22 , 'Normal' , 'dx' ),
-    ( 22 , 23 , 'Fast' , 'sx' )
+    ( 1 , 2 , 'Fast' , 'sx' , $$Con piede destro già pronto prima abbassarsi alla quota corretta poi eseguire le parata$$ ),
+    ( 2 , 3 , 'Fast' , 'frontal' , NULL ),
+    ( 3 , 4 , 'Normal' , 'dx' , $$girare prima i piedi ed allungare il braccio sinistro per esprimere le rotazione$$ ),
+    ( 4 , 5 , 'Slow' , 'frontal' , NULL ),
+    ( 5 , 6 , 'Normal' , 'frontal' , NULL ),
+    ( 6 , 7 , 'Normal' , 'sx' , NULL ),
+    ( 7 , 8 , 'Slow' , 'frontal' , NULL ),
+    ( 8 , 9 , 'Normal' , 'frontal' , NULL ),
+    ( 9 , 10 , 'Normal' , 'frontal' , NULL ),
+    ( 10 , 11 , 'Fast' , 'frontal' , NULL ),
+    ( 11 , 12 , 'Normal' , 'sx' , NULL ),
+    ( 12 , 13 , 'Fast' , 'frontal' , NULL ),
+    ( 13 , 14 , 'Normal' , 'dx' , NULL ),
+    ( 14 , 15 , 'Fast' , 'frontal' , NULL ),
+    ( 15 , 16 , 'Slow' , 'sx' , NULL ),
+    ( 16 , 17 , 'Normal' , 'frontal' , NULL ),
+    ( 17 , 18 , 'Normal' , 'frontal' , NULL ),
+    ( 18 , 19 , 'Fast' , 'frontal' , NULL ),
+    ( 19 , 20 , 'Normal' , 'sx' , NULL ),
+    ( 20 , 21 , 'Fast' , 'dx' , NULL ),
+    ( 21 , 22 , 'Normal' , 'dx' , NULL ),
+    ( 22 , 23 , 'Fast' , 'sx' , NULL )
 ;
-
-
-
-
-
-
-
-
 
 
 
