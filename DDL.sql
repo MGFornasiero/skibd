@@ -1,4 +1,4 @@
---DROP SCHEMA ski CASCADE;
+DROP SCHEMA ski CASCADE;
 CREATE SCHEMA ski;
 
 CREATE TYPE ski.grade_type AS ENUM (
@@ -75,10 +75,26 @@ CREATE TYPE ski.absolute_directions AS ENUM(
     'NO'
 ); -- Direzione assoluta rispetto al saluto inizale
 
+CREATE SEQUENCE ski.seq_id_target AS SMALLINT ;
+CREATE SEQUENCE ski.seq_id_part AS SMALLINT ;
+CREATE SEQUENCE ski.seq_id_technic AS SMALLINT ;
+CREATE SEQUENCE ski.seq_id_stand AS SMALLINT ;
+CREATE SEQUENCE ski.seq_id_grade AS SMALLINT ;
+
+CREATE SEQUENCE ski.seq_kihon_id_inventory AS SMALLINT ;
+CREATE SEQUENCE ski.seq_kihon_id_sequence AS SMALLINT ;
+CREATE SEQUENCE ski.seq_kihon_id_tx AS SMALLINT ;
+
+
+CREATE SEQUENCE ski.seq_kata_id_kata AS SMALLINT ;
+CREATE SEQUENCE ski.seq_kata_id_sequence AS SMALLINT ;
+CREATE SEQUENCE ski.seq_kata_id_kswaza AS SMALLINT ;
+CREATE SEQUENCE ski.seq_kata_id_tx AS SMALLINT ;
+
 --                                      DOMANINS TABLE
 
 CREATE TABLE ski.targets(
-    id_target SMALLSERIAL PRIMARY KEY,
+    id_target SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_target'),
     name VARCHAR(255) NOT NULL,
     original_name VARCHAR(255),
     description TEXT,
@@ -91,7 +107,7 @@ CREATE TABLE ski.targets(
 ); -- parti del corpo colpite
 
 CREATE TABLE ski.strikingparts( 
-    id_part SMALLSERIAL PRIMARY KEY,
+    id_part SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_part'),
     name VARCHAR(255) NOT NULL,
     translation VARCHAR(255),
     description TEXT,
@@ -104,7 +120,7 @@ CREATE TABLE ski.strikingparts(
 ); -- parti del corpo che colpiscono
 
 CREATE TABLE ski.technics(
-    id_technic SMALLSERIAL PRIMARY KEY,
+    id_technic SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technic'),
     waza ski.waza_type,
     name VARCHAR(255) NOT NULL,
     -- aka VARCHAR(255) ,
@@ -118,7 +134,7 @@ CREATE TABLE ski.technics(
 ); --Inventario delle tecniche
 
 CREATE TABLE ski.stands(
-    id_stand SMALLSERIAL PRIMARY KEY,
+    id_stand SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_stand'),
     name VARCHAR(255) NOT NULL,
     -- aka VARCHAR(255) , -- altoro nome con la quale è conosciuta
     description TEXT,
@@ -131,7 +147,7 @@ CREATE TABLE ski.stands(
 ); --Inventario delle posizioni
 
 CREATE TABLE ski.grades(
-    id_grade SMALLSERIAL PRIMARY KEY,
+    id_grade SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_grade'),
     gtype ski.grade_type NOT NULL,
     grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL ,
     color ski.beltcolor,
@@ -142,7 +158,7 @@ CREATE TABLE ski.grades(
 --                                      COMPENDIUM TABLES
 
 CREATE TABLE ski.kihon_inventory(
-    id_inventory SMALLSERIAL PRIMARY KEY,
+    id_inventory SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_inventory'),
     grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
     number SMALLINT NOT NULL,
     notes TEXT,
@@ -151,11 +167,11 @@ CREATE TABLE ski.kihon_inventory(
 ); -- Inventario in forma normale con i kihon per ciascuna cintura
 
 CREATE TABLE ski.kihon_sequences(
-    id_sequence SMALLSERIAL PRIMARY KEY,
-    inventory_id SMALLSERIAL NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
+    id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_sequence'),
+    inventory_id SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
     seq_num SMALLINT NOT NULL, -- Posizione ordinale nella sequenza
-    stand SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
-    techinc SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
+    stand SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
+    techinc SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
     gyaku bool,
     target_hgt ski.target_hgt ,
     notes TEXT ,
@@ -165,7 +181,7 @@ CREATE TABLE ski.kihon_sequences(
 ); --Sequenza delle tecniche che compongono i kihon
 
 CREATE TABLE ski.kihon_tx(
-    id_tx SMALLSERIAL PRIMARY KEY,
+    id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_tx'),
     from_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence), 
     to_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
     movement ski.movements ,
@@ -177,7 +193,7 @@ CREATE TABLE ski.kihon_tx(
 ); --Passaggio da una tecnica all' altra 
 
 CREATE TABLE ski.Kata_inventory(
-    id_kata SMALLSERIAL PRIMARY KEY,
+    id_kata SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kata'),
     kata VARCHAR(255) NOT NULL,
     serie ski.kata_series,
     starting_leg ski.sides NOT NULL,
@@ -187,10 +203,10 @@ CREATE TABLE ski.Kata_inventory(
 ); -- Inventario in forma normale dei kata
 
 CREATE TABLE ski.kata_sequence(
-    id_sequence SMALLSERIAL PRIMARY KEY,
-    kata_id SMALLSERIAL NOT NULL REFERENCES ski.Kata_inventory(id_kata),
-    seq_num SMALLSERIAL NOT NULL,
-    stand_id SMALLSERIAL NOT NULL REFERENCES ski.stands(id_stand),
+    id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_sequence'),
+    kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata),
+    seq_num SMALLINT NOT NULL,
+    stand_id SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
     speed ski.tempo ,
     side ski.sides, -- lato della guardia
     embusen ski.embusen_points ,
@@ -205,10 +221,10 @@ CREATE TABLE ski.kata_sequence(
 -- In alternativa servirebbe un tipo array ma non sarebbero disponibili i constraint, quindi punta alla tabella collegata e 
 
 CREATE TABLE ski.kata_sequence_waza (
-    id_kswaza SMALLSERIAL PRIMARY KEY,
+    id_kswaza SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kswaza'),
     sequence_id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
     arto ski.arti,
-    technic_id SMALLSERIAL NOT NULL REFERENCES ski.technics(id_technic),
+    technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
     strikingpart_id SMALLINT REFERENCES ski.strikingparts(id_part),
     technic_target_id SMALLINT REFERENCES ski.targets(id_target),
     notes TEXT,
@@ -216,7 +232,7 @@ CREATE TABLE ski.kata_sequence_waza (
 );
 
 CREATE TABLE ski.kata_tx (
-    id_tx SMALLSERIAL PRIMARY KEY ,
+    id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_tx'),
     from_seq SMALLINT NOT NULL ,
     to_seq SMALLINT NOT NULL ,
     tempo ski.tempo ,
@@ -229,7 +245,7 @@ CREATE TABLE ski.kata_tx (
 
 -- Valutare come modellare il bunkai, catalogo e riferimento al kata, ma valutare le info
 -- CREATE TABLE ski.bunkai_inventory(
---     bunkai_id SMALLSERIAL PRIMARY KEY ,
+--     bunkai_id SMALLINT PRIMARY KEY ,
 --     kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata) ,
 -- )
 -- CREATE TABLE ski.kata_bunkai(
