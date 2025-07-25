@@ -1,3 +1,4 @@
+--DROP SCHEMA ski CASCADE;
 CREATE SCHEMA ski;
 
 CREATE TYPE ski.grade_type AS ENUM (
@@ -226,7 +227,14 @@ CREATE TABLE ski.kata_tx (
     tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED
 );
 
-
+-- Valutare come modellare il bunkai, catalogo e riferimento al kata, ma valutare le info
+-- CREATE TABLE ski.bunkai_inventory(
+--     bunkai_id SMALLSERIAL PRIMARY KEY ,
+--     kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata) ,
+-- )
+-- CREATE TABLE ski.kata_bunkai(
+--     sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
+-- );
 
 -- FUNZIONI AUSILIARIE PER RECUPERARE LE INFO
 
