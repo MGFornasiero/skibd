@@ -1,7 +1,10 @@
 DROP SCHEMA staging CASCADE;
+DROP SCHEMA upsert CASCADE;
+DROP SCHEMA reject CASCADE;
 
 CREATE SCHEMA staging;
-
+CREATE SCHEMA upsert;
+CREATE SCHEMA reject;
 
 CREATE TABLE staging.targets(
     id_target SMALLINT UNIQUE,
@@ -10,9 +13,9 @@ CREATE TABLE staging.targets(
     description TEXT,
     notes TEXT,
     resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    staging_autoid BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_targetname UNIQUE(name)
 ); -- parti del corpo colpite
 
@@ -23,23 +26,23 @@ CREATE TABLE staging.strikingparts(
     description TEXT,
     notes TEXT,
     resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name) || to_tsvector('simple',translation)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    staging_autoid BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_strikingpartsname UNIQUE(name)
 ); -- parti del corpo che colpiscono
 
 CREATE TABLE staging.technics(
-    id_technic SMALLINT UNIQUE DEFAULT,
-    waza staging.waza_type,
+    id_technic SMALLINT UNIQUE,
+    waza ski.waza_type,
     name VARCHAR(255) NOT NULL,
     -- aka VARCHAR(255) ,
     description TEXT,
     notes TEXT,
     resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    staging_autoid BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_technicname UNIQUE(name)
 ); --Inventario delle tecniche
 
@@ -50,26 +53,30 @@ CREATE TABLE staging.stands(
     description TEXT,
     illustration_url TEXT,
     notes TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
+    staging_autoid BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_standname UNIQUE(name)
 ); --Inventario delle posizioni
 
 CREATE TABLE staging.grades(
     id_grade SMALLINT UNIQUE,
-    gtype staging.grade_type NOT NULL,
+    gtype ski.grade_type NOT NULL,
     grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL ,
-    color staging.beltcolor,
+    color ski.beltcolor,
+    staging_autoid BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_grade UNIQUE (gtype, grade)
 ); -- forma normale della sequenza di gradi Kiu e Dan
 
 CREATE TABLE staging.kihon_inventory(
     id_inventory SMALLINT ,
-    grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
+    grade_id SMALLINT NOT NULL, -- REFERENCES ski.grades(id_grade) 
     number SMALLINT NOT NULL,
     notes TEXT,
-    staging_id BOOL,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
     staging_pk_update BOOL,
     staging_update BOOL ,
     CONSTRAINT unique_kihoninventory UNIQUE (grade_id, number)
@@ -77,25 +84,33 @@ CREATE TABLE staging.kihon_inventory(
 
 CREATE TABLE staging.kihon_sequences(
     id_sequence SMALLINT UNIQUE ,
-    inventory_id SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
+    inventory_id SMALLINT NOT NULL, --  REFERENCES ski.kihon_inventory(id_inventory)
     seq_num SMALLINT NOT NULL, 
-    stand SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
-    techinc SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+    stand SMALLINT NOT NULL , -- REFERENCES ski.stands(id_stand)
+    techinc SMALLINT NOT NULL , -- REFERENCES ski.technics(id_technic)
     gyaku bool DEFAULT 'false',
     target_hgt ski.target_hgt ,
     notes TEXT ,
     resource_url TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_kihonsequence UNIQUE (inventory_id, seq_num)
 );
 
 CREATE TABLE staging.kihon_tx(
     id_tx SMALLINT UNIQUE ,
-    from_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence), 
-    to_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
+    from_seq SMALLINT NOT NULL , --  REFERENCES ski.kihon_sequences(id_sequence)
+    to_seq SMALLINT NOT NULL , -- REFERENCES ski.kihon_sequences(id_sequence)
     movement ski.movements ,
     notes TEXT,
     tempo ski.tempo ,
     resource_url TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_kihontx UNIQUE (from_seq, to_seq)
 ); 
 
@@ -106,14 +121,18 @@ CREATE TABLE staging.Kata_inventory(
     starting_leg ski.sides NOT NULL,
     notes TEXT,
     resource_url TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_kata UNIQUE (kata)
 );
 
 CREATE TABLE staging.kata_sequence(
     id_sequence SMALLINT UNIQUE  ,
-    kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata),
+    kata_id SMALLINT NOT NULL , -- REFERENCES ski.Kata_inventory(id_kata)
     seq_num SMALLINT NOT NULL,
-    stand_id SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
+    stand_id SMALLINT NOT NULL , -- REFERENCES ski.stands(id_stand)
     speed ski.tempo ,
     side ski.sides, 
     embusen ski.embusen_points ,
@@ -121,17 +140,25 @@ CREATE TABLE staging.kata_sequence(
     kiai bool,
     notes TEXT,
     resource_url TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL,
     CONSTRAINT unique_kata_seq UNIQUE (kata_id, seq_num)
 ); 
 
 CREATE TABLE staging.kata_sequence_waza (
     id_kswaza SMALLINT UNIQUE ,
-    sequence_id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
+    sequence_id SMALLINT , --REFERENCES ski.kata_sequence(id_sequence)
     arto ski.arti,
-    technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
-    strikingpart_id SMALLINT REFERENCES ski.strikingparts(id_part),
-    technic_target_id SMALLINT REFERENCES ski.targets(id_target),
-    notes TEXT
+    technic_id SMALLINT NOT NULL , -- REFERENCES ski.technics(id_technic)
+    strikingpart_id SMALLINT , -- REFERENCES ski.strikingparts(id_part)
+    technic_target_id SMALLINT , -- REFERENCES ski.targets(id_target)
+    notes TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL
 );
 
 CREATE TABLE staging.kata_tx (
@@ -140,379 +167,617 @@ CREATE TABLE staging.kata_tx (
     to_seq SMALLINT NOT NULL ,
     tempo ski.tempo ,
     direction ski.sides ,
-    intermediate_stand SMALLINT REFERENCES ski.stands(id_stand),
+    intermediate_stand SMALLINT , -- 
     notes TEXT,
-    resource_url TEXT
+    resource_url TEXT,
+    staging_autoid BOOL,
+    staging_fk_error BOOL,
+    staging_pk_update BOOL,
+    staging_update BOOL
 );
 
 
+CREATE VIEW staging.dom_targets AS
+SELECT id_target FROM ski.targets
+UNION
+SELECT id_target FROM staging.targets;
+
+CREATE VIEW staging.dom_strikingparts AS
+SELECT id_part FROM ski.strikingparts
+UNION
+SELECT id_part FROM staging.strikingparts;
+
+CREATE VIEW staging.dom_technics AS
+SELECT id_technic FROM ski.technics
+UNION
+SELECT id_technic FROM staging.technics;
+
+CREATE VIEW staging.dom_stands AS
+SELECT id_stand FROM ski.stands
+UNION
+SELECT id_stand FROM staging.stands;
+
+CREATE VIEW staging.dom_grades AS
+SELECT id_grade FROM ski.grades
+UNION
+SELECT id_grade FROM staging.grades;
+
+CREATE VIEW staging.dom_kihon_inventory AS
+SELECT id_inventory FROM ski.kihon_inventory
+UNION
+SELECT id_inventory FROM staging.kihon_inventory;
+
+CREATE VIEW staging.dom_kihon_sequences AS
+SELECT id_sequence FROM ski.kihon_sequences
+UNION
+SELECT id_sequence FROM staging.kihon_sequences;
+
+CREATE VIEW staging.dom_kihon_tx AS
+SELECT id_tx FROM ski.kihon_tx
+UNION
+SELECT id_tx FROM staging.kihon_tx;
+
+CREATE VIEW staging.dom_kata_inventory AS
+SELECT id_kata FROM ski.Kata_inventory
+UNION
+SELECT id_kata FROM staging.Kata_inventory;
+
+CREATE VIEW staging.dom_kata_sequence AS
+SELECT id_sequence FROM ski.kata_sequence
+UNION
+SELECT id_sequence FROM staging.kata_sequence;
+
+CREATE VIEW staging.dom_kata_sequence_waza AS
+SELECT id_kswaza FROM ski.kata_sequence_waza
+UNION
+SELECT id_kswaza FROM staging.kata_sequence_waza;
+
+CREATE VIEW staging.dom_kata_tx AS
+SELECT id_tx FROM ski.kata_tx
+UNION
+SELECT id_tx FROM staging.kata_tx;
+
+-- upsert tables
+CREATE TABLE upsert.targets() INHERITS(staging.targets);
+CREATE TABLE upsert.strikingparts() INHERITS(staging.strikingparts);
+CREATE TABLE upsert.technics() INHERITS(staging.technics);
+CREATE TABLE upsert.stands() INHERITS(staging.stands);
+CREATE TABLE upsert.grades() INHERITS(staging.grades);
+CREATE TABLE upsert.kihon_inventory() INHERITS(staging.kihon_inventory);
+CREATE TABLE upsert.kihon_sequences() INHERITS(staging.kihon_sequences);
+CREATE TABLE upsert.kihon_tx() INHERITS(staging.kihon_tx);
+CREATE TABLE upsert.Kata_inventory() INHERITS(staging.Kata_inventory);
+CREATE TABLE upsert.kata_sequence() INHERITS(staging.kata_sequence);
+CREATE TABLE upsert.kata_sequence_waza() INHERITS(staging.kata_sequence_waza);
+CREATE TABLE upsert.kata_tx() INHERITS(staging.kata_tx);
+
+-- rejected tables
+CREATE TABLE reject.targets() INHERITS(staging.targets);
+CREATE TABLE reject.strikingparts() INHERITS(staging.strikingparts);
+CREATE TABLE reject.technics() INHERITS(staging.technics);
+CREATE TABLE reject.stands() INHERITS(staging.stands);
+CREATE TABLE reject.grades() INHERITS(staging.grades);
+CREATE TABLE reject.kihon_inventory() INHERITS(staging.kihon_inventory);
+CREATE TABLE reject.kihon_sequences() INHERITS(staging.kihon_sequences);
+CREATE TABLE reject.kihon_tx() INHERITS(staging.kihon_tx);
+CREATE TABLE reject.Kata_inventory() INHERITS(staging.Kata_inventory);
+CREATE TABLE reject.kata_sequence() INHERITS(staging.kata_sequence);
+CREATE TABLE reject.kata_sequence_waza() INHERITS(staging.kata_sequence_waza);
+CREATE TABLE reject.kata_tx() INHERITS(staging.kata_tx);
+
+-- Returns the maximum id_target from ski.targets and staging.targets
 CREATE OR REPLACE FUNCTION staging.floor_id_targets()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_target AS id FROM ski.targets
-    UNION 
-    SELECT id_target AS id FROM staging.targets
+    SELECT MAX(id) FROM (
+        SELECT id_target AS id FROM ski.targets
+        UNION 
+        SELECT id_target AS id FROM staging.targets
     );
 $func$;
 
+-- Returns the maximum id_part from ski.strikingparts and staging.strikingparts
 CREATE OR REPLACE FUNCTION staging.floor_id_strikingparts()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_part AS id FROM ski.strikingparts
-    UNION 
-    SELECT id_part AS id FROM staging.strikingparts
+    SELECT MAX(id) FROM (
+        SELECT id_part AS id FROM ski.strikingparts
+        UNION 
+        SELECT id_part AS id FROM staging.strikingparts
     );
 $func$;
 
+-- Returns the maximum id_technic from ski.technics and staging.technics
 CREATE OR REPLACE FUNCTION staging.floor_id_technics()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_technic AS id FROM ski.technics
-    UNION 
-    SELECT id_technic AS id FROM staging.technics
+    SELECT MAX(id) FROM (
+        SELECT id_technic AS id FROM ski.technics
+        UNION 
+        SELECT id_technic AS id FROM staging.technics
     );
 $func$;
 
+-- Returns the maximum id_stand from ski.stands and staging.stands
 CREATE OR REPLACE FUNCTION staging.floor_id_stands()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_stand AS id FROM ski.stands
-    UNION 
-    SELECT id_stand AS id FROM staging.stands
+    SELECT MAX(id) FROM (
+        SELECT id_stand AS id FROM ski.stands
+        UNION 
+        SELECT id_stand AS id FROM staging.stands
     );
 $func$;
 
+-- Returns the maximum id_grade from ski.grades and staging.grades
 CREATE OR REPLACE FUNCTION staging.floor_id_grades()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_grade AS id FROM ski.grades
-    UNION 
-    SELECT id_grade AS id FROM staging.grades
+    SELECT MAX(id) FROM (
+        SELECT id_grade AS id FROM ski.grades
+        UNION 
+        SELECT id_grade AS id FROM staging.grades
     );
 $func$;
 
+-- Returns the maximum id_inventory from ski.kihon_inventory and staging.kihon_inventory
 CREATE OR REPLACE FUNCTION staging.floor_id_inventory()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_inventory AS id FROM ski.kihon_inventory
-    UNION 
-    SELECT id_inventory AS id FROM staging.kihon_inventory
+    SELECT MAX(id) FROM (
+        SELECT id_inventory AS id FROM ski.kihon_inventory
+        UNION 
+        SELECT id_inventory AS id FROM staging.kihon_inventory
     );
 $func$;
 
+-- Returns the maximum id_sequence from ski.kihon_sequences and staging.kihon_sequences
 CREATE OR REPLACE FUNCTION staging.floor_id_sequences()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_sequence AS id FROM ski.kihon_sequences
-    UNION 
-    SELECT id_sequence AS id FROM staging.kihon_sequences
+    SELECT MAX(id) FROM (
+        SELECT id_sequence AS id FROM ski.kihon_sequences
+        UNION 
+        SELECT id_sequence AS id FROM staging.kihon_sequences
     );
 $func$;
 
+-- Returns the maximum id_tx from ski.kihon_tx and staging.kihon_tx
 CREATE OR REPLACE FUNCTION staging.floor_id_tx()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_tx AS id FROM ski.kihon_tx
-    UNION 
-    SELECT id_tx AS id FROM staging.kihon_tx
+    SELECT MAX(id) FROM (
+        SELECT id_tx AS id FROM ski.kihon_tx
+        UNION 
+        SELECT id_tx AS id FROM staging.kihon_tx
     );
 $func$;
 
+-- Returns the maximum id_kata from ski.Kata_inventory and staging.Kata_inventory
 CREATE OR REPLACE FUNCTION staging.floor_id_kata()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_kata AS id FROM ski.Kata_inventory
-    UNION 
-    SELECT id_kata AS id FROM staging.Kata_inventory
+    SELECT MAX(id) FROM (
+        SELECT id_kata AS id FROM ski.Kata_inventory
+        UNION 
+        SELECT id_kata AS id FROM staging.Kata_inventory
     );
 $func$;
 
+-- Returns the maximum id_sequence from ski.kata_sequence and staging.kata_sequence
 CREATE OR REPLACE FUNCTION staging.floor_id_kata_sequence()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_sequence AS id FROM ski.kata_sequence
-    UNION 
-    SELECT id_sequence AS id FROM staging.kata_sequence
+    SELECT MAX(id) FROM (
+        SELECT id_sequence AS id FROM ski.kata_sequence
+        UNION 
+        SELECT id_sequence AS id FROM staging.kata_sequence
     );
 $func$;
 
+-- Returns the maximum id_kswaza from ski.kata_sequence_waza and staging.kata_sequence_waza
 CREATE OR REPLACE FUNCTION staging.floor_id_kswaza()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_kswaza AS id FROM ski.kata_sequence_waza
-    UNION 
-    SELECT id_kswaza AS id FROM staging.kata_sequence_waza
+    SELECT MAX(id) FROM (
+        SELECT id_kswaza AS id FROM ski.kata_sequence_waza
+        UNION 
+        SELECT id_kswaza AS id FROM staging.kata_sequence_waza
     );
 $func$;
 
+-- Returns the maximum id_tx from ski.kata_tx and staging.kata_tx
 CREATE OR REPLACE FUNCTION staging.floor_id_kata_tx()
   RETURNS integer
   LANGUAGE sql AS
 $func$
-  SELECT MAX(id) FROM (
-    SELECT id_tx AS id FROM ski.kata_tx
-    UNION 
-    SELECT id_tx AS id FROM staging.kata_tx
+    SELECT MAX(id) FROM (
+        SELECT id_tx AS id FROM ski.kata_tx
+        UNION 
+        SELECT id_tx AS id FROM staging.kata_tx
     );
 $func$;
 ---
 
-CREATE PROCEDURE fill_targets()
+-- Assigns missing id_target values and sets staging_autoid for staging.targets
+CREATE PROCEDURE staging.fill_targets()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.targets
+        SET id_target = nextval('ski.seq_id_target')
+        WHERE id_target IS NULL
+        RETURNING id_target
+    )
     UPDATE staging.targets
-    SET id_target = nextval('ski.seq_id_target')
-    WHERE id_target IS NULL
-    RETURNING id_target
-)
-UPDATE staging.targets
-SET staging_id = true
-FROM assign_id
-WHERE targets.id_target = assign_id.id_target;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE targets.id_target = assign_id.id_target;
 
-UPDATE staging.targets
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.targets
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_strikingparts()
+-- Assigns missing id_part values and sets staging_autoid for staging.strikingparts
+CREATE PROCEDURE staging.fill_strikingparts()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.strikingparts
+        SET id_part = nextval('ski.seq_id_part')
+        WHERE id_part IS NULL
+        RETURNING id_part
+    )
     UPDATE staging.strikingparts
-    SET id_part = nextval('ski.seq_id_part')
-    WHERE id_part IS NULL
-    RETURNING id_part
-)
-UPDATE staging.strikingparts
-SET staging_id = true
-FROM assign_id
-WHERE strikingparts.id_part = assign_id.id_part;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE strikingparts.id_part = assign_id.id_part;
 
-UPDATE staging.strikingparts
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.strikingparts
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_technics()
+-- Assigns missing id_technic values and sets staging_autoid for staging.technics
+CREATE PROCEDURE staging.fill_technics()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.technics
+        SET id_technic = nextval('ski.seq_id_technic')
+        WHERE id_technic IS NULL
+        RETURNING id_technic
+    )
     UPDATE staging.technics
-    SET id_technic = nextval('ski.seq_id_technic')
-    WHERE id_technic IS NULL
-    RETURNING id_technic
-)
-UPDATE staging.technics
-SET staging_id = true
-FROM assign_id
-WHERE technics.id_technic = assign_id.id_technic;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE technics.id_technic = assign_id.id_technic;
 
-UPDATE staging.technics
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.technics
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_stands()
+-- Assigns missing id_stand values and sets staging_autoid for staging.stands
+CREATE PROCEDURE staging.fill_stands()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.stands
+        SET id_stand = nextval('ski.seq_id_stand')
+        WHERE id_stand IS NULL
+        RETURNING id_stand
+    )
     UPDATE staging.stands
-    SET id_stand = nextval('ski.seq_id_stand')
-    WHERE id_stand IS NULL
-    RETURNING id_stand
-)
-UPDATE staging.stands
-SET staging_id = true
-FROM assign_id
-WHERE stands.id_stand = assign_id.id_stand;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE stands.id_stand = assign_id.id_stand;
 
-UPDATE staging.stands
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.stands
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_grades()
+-- Assigns missing id_grade values and sets staging_autoid for staging.grades
+CREATE PROCEDURE staging.fill_grades()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.grades
+        SET id_grade = nextval('ski.seq_id_grade')
+        WHERE id_grade IS NULL
+        RETURNING id_grade
+    )
     UPDATE staging.grades
-    SET id_grade = nextval('ski.seq_id_grade')
-    WHERE id_grade IS NULL
-    RETURNING id_grade
-)
-UPDATE staging.grades
-SET staging_id = true
-FROM assign_id
-WHERE grades.id_grade = assign_id.id_grade;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE grades.id_grade = assign_id.id_grade;
 
-UPDATE staging.grades
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.grades
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kihon_inventory()
+-- Assigns missing id_inventory values and sets staging_autoid for staging.kihon_inventory
+CREATE PROCEDURE staging.fill_kihon_inventory()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kihon_inventory
+        SET id_inventory = nextval('ski.seq_kihon_id_inventory')
+        WHERE id_inventory IS NULL
+        RETURNING id_inventory
+    )
     UPDATE staging.kihon_inventory
-    SET id_inventory = nextval('ski.seq_kihon_id_inventory')
-    WHERE id_inventory IS NULL
-    RETURNING id_inventory
-)
-UPDATE staging.kihon_inventory
-SET staging_id = true
-FROM assign_id
-WHERE kihon_inventory.id_inventory = assign_id.id_inventory;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kihon_inventory.id_inventory = assign_id.id_inventory;
 
-UPDATE staging.kihon_inventory
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kihon_inventory
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kihon_sequences()
+-- Assigns missing id_sequence values and sets staging_autoid for staging.kihon_sequences
+CREATE PROCEDURE staging.fill_kihon_sequences()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kihon_sequences
+        SET id_sequence = nextval('ski.seq_kihon_id_sequence')
+        WHERE id_sequence IS NULL
+        RETURNING id_sequence
+    )
     UPDATE staging.kihon_sequences
-    SET id_sequence = nextval('ski.seq_kihon_id_sequence')
-    WHERE id_sequence IS NULL
-    RETURNING id_sequence
-)
-UPDATE staging.kihon_sequences
-SET staging_id = true
-FROM assign_id
-WHERE kihon_sequences.id_sequence = assign_id.id_sequence;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kihon_sequences.id_sequence = assign_id.id_sequence;
 
-UPDATE staging.kihon_sequences
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kihon_sequences
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kihon_tx()
+-- Assigns missing id_tx values and sets staging_autoid for staging.kihon_tx
+CREATE PROCEDURE staging.fill_kihon_tx()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kihon_tx
+        SET id_tx = nextval('ski.seq_kihon_id_tx')
+        WHERE id_tx IS NULL
+        RETURNING id_tx
+    )
     UPDATE staging.kihon_tx
-    SET id_tx = nextval('ski.seq_kihon_id_tx')
-    WHERE id_tx IS NULL
-    RETURNING id_tx
-)
-UPDATE staging.kihon_tx
-SET staging_id = true
-FROM assign_id
-WHERE kihon_tx.id_tx = assign_id.id_tx;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kihon_tx.id_tx = assign_id.id_tx;
 
-UPDATE staging.kihon_tx
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kihon_tx
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_Kata_inventory()
+-- Assigns missing id_kata values and sets staging_autoid for staging.Kata_inventory
+CREATE PROCEDURE staging.fill_Kata_inventory()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.Kata_inventory
+        SET id_kata = nextval('ski.seq_kata_id_kata')
+        WHERE id_kata IS NULL
+        RETURNING id_kata
+    )
     UPDATE staging.Kata_inventory
-    SET id_kata = nextval('ski.seq_kata_id_kata')
-    WHERE id_kata IS NULL
-    RETURNING id_kata
-)
-UPDATE staging.Kata_inventory
-SET staging_id = true
-FROM assign_id
-WHERE Kata_inventory.id_kata = assign_id.id_kata;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE Kata_inventory.id_kata = assign_id.id_kata;
 
-UPDATE staging.Kata_inventory
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.Kata_inventory
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kata_sequence()
+-- Assigns missing id_sequence values and sets staging_autoid for staging.kata_sequence
+CREATE PROCEDURE staging.fill_kata_sequence()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kata_sequence
+        SET id_sequence = nextval('ski.seq_kata_id_sequence')
+        WHERE id_sequence IS NULL
+        RETURNING id_sequence
+    )
     UPDATE staging.kata_sequence
-    SET id_sequence = nextval('ski.seq_kata_id_sequence')
-    WHERE id_sequence IS NULL
-    RETURNING id_sequence
-)
-UPDATE staging.kata_sequence
-SET staging_id = true
-FROM assign_id
-WHERE kata_sequence.id_sequence = assign_id.id_sequence;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kata_sequence.id_sequence = assign_id.id_sequence;
 
-UPDATE staging.kata_sequence
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kata_sequence
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kata_sequence_waza()
+-- Assigns missing id_kswaza values and sets staging_autoid for staging.kata_sequence_waza
+CREATE PROCEDURE staging.fill_kata_sequence_waza()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kata_sequence_waza
+        SET id_kswaza = nextval('ski.seq_kata_id_kswaza')
+        WHERE id_kswaza IS NULL
+        RETURNING id_kswaza
+    )
     UPDATE staging.kata_sequence_waza
-    SET id_kswaza = nextval('ski.seq_kata_id_kswaza')
-    WHERE id_kswaza IS NULL
-    RETURNING id_kswaza
-)
-UPDATE staging.kata_sequence_waza
-SET staging_id = true
-FROM assign_id
-WHERE kata_sequence_waza.id_kswaza = assign_id.id_kswaza;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kata_sequence_waza.id_kswaza = assign_id.id_kswaza;
 
-UPDATE staging.kata_sequence_waza
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kata_sequence_waza
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE fill_kata_tx()
+-- Assigns missing id_tx values and sets staging_autoid for staging.kata_tx
+CREATE PROCEDURE staging.fill_kata_tx()
 LANGUAGE SQL
 BEGIN ATOMIC;
-WITH assign_id AS (
+    WITH assign_id AS (
+        UPDATE staging.kata_tx
+        SET id_tx = nextval('ski.seq_kata_id_tx')
+        WHERE id_tx IS NULL
+        RETURNING id_tx
+    )
     UPDATE staging.kata_tx
-    SET id_tx = nextval('ski.seq_kata_id_tx')
-    WHERE id_tx IS NULL
-    RETURNING id_tx
-)
-UPDATE staging.kata_tx
-SET staging_id = true
-FROM assign_id
-WHERE kata_tx.id_tx = assign_id.id_tx;
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kata_tx.id_tx = assign_id.id_tx;
 
-UPDATE staging.kata_tx
-SET staging_id = false
-WHERE staging_id IS NULL;
+    UPDATE staging.kata_tx
+    SET staging_autoid = false
+    WHERE staging_autoid IS NULL;
 END;
 
-CREATE PROCEDURE feed_targets()
+-- Checks FK for kihon_inventory and moves invalid rows to reject.kihon_inventory
+CREATE PROCEDURE staging.chkfk_kihon_inventory()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_inventory
+        FROM staging.kihon_inventory l
+        LEFT JOIN staging.dom_grades r
+        ON l.grade_id = r.id_grade
+        WHERE r.id_grade IS NULL
+      )
+    UPDATE staging.kihon_inventory t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_inventory = fk.id_inventory;
+
+END;
+
+-- Checks FK for kihon_sequences and moves invalid rows to reject.kihon_sequences
+CREATE PROCEDURE staging.chkfk_kihon_sequences()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_sequence
+        FROM staging.kihon_sequences l
+        LEFT JOIN staging.dom_kihon_inventory ki ON l.inventory_id = ki.id_inventory
+        LEFT JOIN staging.dom_stands s ON l.stand = s.id_stand
+        LEFT JOIN staging.dom_technics te ON l.techinc = te.id_technic
+        WHERE ki.id_inventory IS NULL OR s.id_stand IS NULL OR te.id_technic IS NULL
+      )
+    UPDATE staging.kihon_sequences t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_sequence = fk.id_sequence;
+
+END;
+
+-- Checks FK for kihon_tx and moves invalid rows to reject.kihon_tx
+CREATE PROCEDURE staging.chkfk_kihon_tx()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_tx
+        FROM staging.kihon_tx l
+        LEFT JOIN staging.dom_kihon_sequences fseq ON l.from_seq = fseq.id_sequence
+        LEFT JOIN staging.dom_kihon_sequences tseq ON l.to_seq = tseq.id_sequence
+        WHERE fseq.id_sequence IS NULL OR tseq.id_sequence IS NULL
+      )
+    UPDATE staging.kihon_tx t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_tx = fk.id_tx;
+
+END;
+
+-- Checks FK for kata_sequence and moves invalid rows to reject.kata_sequence
+CREATE PROCEDURE staging.chkfk_kata_sequence()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_sequence
+        FROM staging.kata_sequence l
+        LEFT JOIN staging.dom_kata_inventory ki ON l.kata_id = ki.id_kata
+        LEFT JOIN staging.dom_stands s ON l.stand_id = s.id_stand
+        WHERE ki.id_kata IS NULL OR s.id_stand IS NULL
+      )
+    UPDATE staging.kata_sequence t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_sequence = fk.id_sequence;
+
+END;
+
+-- Checks FK for kata_sequence_waza and moves invalid rows to reject.kata_sequence_waza
+CREATE PROCEDURE staging.chkfk_kata_sequence_waza()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_kswaza
+        FROM staging.kata_sequence_waza l
+        LEFT JOIN staging.dom_kata_sequence ks ON l.sequence_id = ks.id_sequence
+        LEFT JOIN staging.dom_technics te ON l.technic_id = te.id_technic
+        LEFT JOIN staging.dom_strikingparts sp ON l.strikingpart_id = sp.id_part
+        LEFT JOIN staging.dom_targets ta ON l.technic_target_id = ta.id_target
+        WHERE ks.id_sequence IS NULL OR te.id_technic IS NULL
+          OR (l.strikingpart_id IS NOT NULL AND sp.id_part IS NULL)
+          OR (l.technic_target_id IS NOT NULL AND ta.id_target IS NULL)
+      )
+    UPDATE staging.kata_sequence_waza t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_kswaza = fk.id_kswaza;
+
+END;
+
+-- Checks FK for kata_tx and moves invalid rows to reject.kata_tx
+CREATE PROCEDURE staging.chkfk_kata_tx()
+LANGUAGE SQL
+BEGIN ATOMIC;
+    WITH 
+      fk_error AS (
+        SELECT id_tx
+        FROM staging.kata_tx l
+        LEFT JOIN staging.dom_kata_sequence fseq ON l.from_seq = fseq.id_sequence
+        LEFT JOIN staging.dom_kata_sequence tseq ON l.to_seq = tseq.id_sequence
+        LEFT JOIN staging.dom_stands s ON l.intermediate_stand = s.id_stand
+        WHERE fseq.id_sequence IS NULL OR tseq.id_sequence IS NULL
+          OR (l.intermediate_stand IS NOT NULL AND s.id_stand IS NULL)
+      )
+    UPDATE staging.kata_tx t
+    SET staging_fk_error = true
+    FROM fk_error fk
+    WHERE t.id_tx = fk.id_tx;
+
+END;
+
+-- Upserts and moves rows from staging.targets to upsert/reject
+CREATE PROCEDURE staging.feed_targets()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.targets t
+    UPDATE ski.targets t
     SET id_target = staging.id_target,
         name = staging.name,
         original_name = staging.original_name,
@@ -524,7 +789,7 @@ tbl_pk_update AS (
     RETURNING t.id_target
 ),
 tbl_update AS (
-    INSERT INTO test.targets(
+    INSERT INTO ski.targets(
         id_target, name, original_name, description, notes, resource_url
     )
     SELECT id_target, name, original_name, description, notes, resource_url
@@ -557,14 +822,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_target = d.id_target;
+
 END;
 
-CREATE PROCEDURE feed_strikingparts()
+-- Upserts and moves rows from staging.strikingparts to upsert/reject
+CREATE PROCEDURE staging.feed_strikingparts()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.strikingparts t
+    UPDATE ski.strikingparts t
     SET id_part = staging.id_part,
         name = staging.name,
         translation = staging.translation,
@@ -576,7 +843,7 @@ tbl_pk_update AS (
     RETURNING t.id_part
 ),
 tbl_update AS (
-    INSERT INTO test.strikingparts(
+    INSERT INTO ski.strikingparts(
         id_part, name, translation, description, notes, resource_url
     )
     SELECT id_part, name, translation, description, notes, resource_url
@@ -609,14 +876,15 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_part = d.id_part;
+
 END;
 
-CREATE PROCEDURE feed_technics()
+CREATE PROCEDURE staging.feed_technics()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.technics t
+    UPDATE ski.technics t
     SET id_technic = staging.id_technic,
         waza = staging.waza,
         name = staging.name,
@@ -628,7 +896,7 @@ tbl_pk_update AS (
     RETURNING t.id_technic
 ),
 tbl_update AS (
-    INSERT INTO test.technics(
+    INSERT INTO ski.technics(
         id_technic, waza, name, description, notes, resource_url
     )
     SELECT id_technic, waza, name, description, notes, resource_url
@@ -661,14 +929,15 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_technic = d.id_technic;
+
 END;
 
-CREATE PROCEDURE feed_stands()
+CREATE PROCEDURE staging.feed_stands()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.stands t
+    UPDATE ski.stands t
     SET id_stand = staging.id_stand,
         name = staging.name,
         description = staging.description,
@@ -679,7 +948,7 @@ tbl_pk_update AS (
     RETURNING t.id_stand
 ),
 tbl_update AS (
-    INSERT INTO test.stands(
+    INSERT INTO ski.stands(
         id_stand, name, description, illustration_url, notes
     )
     SELECT id_stand, name, description, illustration_url, notes
@@ -711,14 +980,15 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_stand = d.id_stand;
+
 END;
 
-CREATE PROCEDURE feed_grades()
+CREATE PROCEDURE staging.feed_grades()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.grades t
+    UPDATE ski.grades t
     SET id_grade = staging.id_grade,
         gtype = staging.gtype,
         grade = staging.grade,
@@ -728,7 +998,7 @@ tbl_pk_update AS (
     RETURNING t.id_grade
 ),
 tbl_update AS (
-    INSERT INTO test.grades(
+    INSERT INTO ski.grades(
         id_grade, gtype, grade, color
     )
     SELECT id_grade, gtype, grade, color
@@ -759,14 +1029,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_grade = d.id_grade;
+
 END;
 
-CREATE PROCEDURE feed_kihon_inventory()
+-- Upserts and moves rows from staging.kihon_inventory to upsert/reject
+CREATE PROCEDURE staging.feed_kihon_inventory()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kihon_inventory inv
+    UPDATE ski.kihon_inventory inv
     SET id_inventory = staging.id_inventory,
         grade_id = staging.grade_id,
         number = staging.number,
@@ -776,7 +1048,7 @@ tbl_pk_update AS (
     RETURNING inv.id_inventory
 ),
 tbl_update AS (
-    INSERT INTO test.kihon_inventory(
+    INSERT INTO ski.kihon_inventory(
         id_inventory, grade_id, number, notes
     )
     SELECT id_inventory, grade_id, number, notes
@@ -785,6 +1057,7 @@ tbl_update AS (
         FROM staging.kihon_inventory tot
         LEFT JOIN tbl_pk_update esc ON tot.id_inventory = esc.id_inventory
         WHERE esc.id_inventory IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (grade_id, number)
     DO UPDATE SET
@@ -807,14 +1080,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_inventory = d.id_inventory;
+
 END;
 
-CREATE PROCEDURE feed_kihon_sequences()
+-- Upserts and moves rows from staging.kihon_sequences to upsert/reject
+CREATE PROCEDURE staging.feed_kihon_sequences()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kihon_sequences seq
+    UPDATE ski.kihon_sequences seq
     SET id_sequence = staging.id_sequence,
         inventory_id = staging.inventory_id,
         seq_num = staging.seq_num,
@@ -829,7 +1104,7 @@ tbl_pk_update AS (
     RETURNING seq.id_sequence
 ),
 tbl_update AS (
-    INSERT INTO test.kihon_sequences(
+    INSERT INTO ski.kihon_sequences(
         id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes, resource_url
     )
     SELECT id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes, resource_url
@@ -838,6 +1113,7 @@ tbl_update AS (
         FROM staging.kihon_sequences tot
         LEFT JOIN tbl_pk_update esc ON tot.id_sequence = esc.id_sequence
         WHERE esc.id_sequence IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (inventory_id, seq_num)
     DO UPDATE SET
@@ -865,14 +1141,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_sequence = d.id_sequence;
+
 END;
 
-CREATE PROCEDURE feed_kihon_tx()
+-- Upserts and moves rows from staging.kihon_tx to upsert/reject
+CREATE PROCEDURE staging.feed_kihon_tx()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kihon_tx tx
+    UPDATE ski.kihon_tx tx
     SET id_tx = staging.id_tx,
         from_seq = staging.from_seq,
         to_seq = staging.to_seq,
@@ -885,7 +1163,7 @@ tbl_pk_update AS (
     RETURNING tx.id_tx
 ),
 tbl_update AS (
-    INSERT INTO test.kihon_tx(
+    INSERT INTO ski.kihon_tx(
         id_tx, from_seq, to_seq, movement, notes, tempo, resource_url
     )
     SELECT id_tx, from_seq, to_seq, movement, notes, tempo, resource_url
@@ -894,6 +1172,7 @@ tbl_update AS (
         FROM staging.kihon_tx tot
         LEFT JOIN tbl_pk_update esc ON tot.id_tx = esc.id_tx
         WHERE esc.id_tx IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (from_seq, to_seq)
     DO UPDATE SET
@@ -919,14 +1198,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_tx = d.id_tx;
+
 END;
 
-CREATE PROCEDURE feed_Kata_inventory()
+-- Upserts and moves rows from staging.Kata_inventory to upsert/reject
+CREATE PROCEDURE staging.feed_Kata_inventory()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.Kata_inventory kata
+    UPDATE ski.Kata_inventory kata
     SET id_kata = staging.id_kata,
         kata = staging.kata,
         serie = staging.serie,
@@ -938,7 +1219,7 @@ tbl_pk_update AS (
     RETURNING kata.id_kata
 ),
 tbl_update AS (
-    INSERT INTO test.Kata_inventory(
+    INSERT INTO ski.Kata_inventory(
         id_kata, kata, serie, starting_leg, notes, resource_url
     )
     SELECT id_kata, kata, serie, starting_leg, notes, resource_url
@@ -947,6 +1228,7 @@ tbl_update AS (
         FROM staging.Kata_inventory tot
         LEFT JOIN tbl_pk_update esc ON tot.id_kata = esc.id_kata
         WHERE esc.id_kata IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (kata)
     DO UPDATE SET
@@ -971,14 +1253,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_kata = d.id_kata;
+
 END;
 
-CREATE PROCEDURE feed_kata_sequence()
+-- Upserts and moves rows from staging.kata_sequence to upsert/reject
+CREATE PROCEDURE staging.feed_kata_sequence()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kata_sequence seq
+    UPDATE ski.kata_sequence seq
     SET id_sequence = staging.id_sequence,
         kata_id = staging.kata_id,
         seq_num = staging.seq_num,
@@ -995,7 +1279,7 @@ tbl_pk_update AS (
     RETURNING seq.id_sequence
 ),
 tbl_update AS (
-    INSERT INTO test.kata_sequence(
+    INSERT INTO ski.kata_sequence(
         id_sequence, kata_id, seq_num, stand_id, speed, side, embusen, facing, kiai, notes, resource_url
     )
     SELECT id_sequence, kata_id, seq_num, stand_id, speed, side, embusen, facing, kiai, notes, resource_url
@@ -1004,6 +1288,7 @@ tbl_update AS (
         FROM staging.kata_sequence tot
         LEFT JOIN tbl_pk_update esc ON tot.id_sequence = esc.id_sequence
         WHERE esc.id_sequence IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (kata_id, seq_num)
     DO UPDATE SET
@@ -1033,14 +1318,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_sequence = d.id_sequence;
+
 END;
 
-CREATE PROCEDURE feed_kata_sequence_waza()
+-- Upserts and moves rows from staging.kata_sequence_waza to upsert/reject
+CREATE PROCEDURE staging.feed_kata_sequence_waza()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kata_sequence_waza waza
+    UPDATE ski.kata_sequence_waza waza
     SET id_kswaza = staging.id_kswaza,
         sequence_id = staging.sequence_id,
         arto = staging.arto,
@@ -1053,7 +1340,7 @@ tbl_pk_update AS (
     RETURNING waza.id_kswaza
 ),
 tbl_update AS (
-    INSERT INTO test.kata_sequence_waza(
+    INSERT INTO ski.kata_sequence_waza(
         id_kswaza, sequence_id, arto, technic_id, strikingpart_id, technic_target_id, notes
     )
     SELECT id_kswaza, sequence_id, arto, technic_id, strikingpart_id, technic_target_id, notes
@@ -1062,6 +1349,7 @@ tbl_update AS (
         FROM staging.kata_sequence_waza tot
         LEFT JOIN tbl_pk_update esc ON tot.id_kswaza = esc.id_kswaza
         WHERE esc.id_kswaza IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (id_kswaza)
     DO UPDATE SET
@@ -1087,14 +1375,16 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_kswaza = d.id_kswaza;
+
 END;
 
-CREATE PROCEDURE feed_kata_tx()
+-- Upserts and moves rows from staging.kata_tx to upsert/reject
+CREATE PROCEDURE staging.feed_kata_tx()
 LANGUAGE SQL
 BEGIN ATOMIC;
 WITH
 tbl_pk_update AS (
-    UPDATE test.kata_tx tx
+    UPDATE ski.kata_tx tx
     SET id_tx = staging.id_tx,
         from_seq = staging.from_seq,
         to_seq = staging.to_seq,
@@ -1108,7 +1398,7 @@ tbl_pk_update AS (
     RETURNING tx.id_tx
 ),
 tbl_update AS (
-    INSERT INTO test.kata_tx(
+    INSERT INTO ski.kata_tx(
         id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes, resource_url
     )
     SELECT id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes, resource_url
@@ -1117,6 +1407,7 @@ tbl_update AS (
         FROM staging.kata_tx tot
         LEFT JOIN tbl_pk_update esc ON tot.id_tx = esc.id_tx
         WHERE esc.id_tx IS NULL
+            AND tot.staging_fk_error IS NOT false
     )
     ON CONFLICT (id_tx)
     DO UPDATE SET
@@ -1143,4 +1434,177 @@ SET staging_pk_update = d.staging_pk_update,
     staging_update = d.staging_update
 FROM details d
 WHERE t.id_tx = d.id_tx;
+
+DELETE FROM staging.kata_tx;
 END;
+
+-- Loads and processes all targets from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_targets()
+LANGUAGE SQL AS $proc$
+    CALL staging.fill_targets();
+    -- No FK check for targets
+    CALL staging.feed_targets();
+$proc$;
+
+-- Loads and processes all strikingparts from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_strikingparts()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_strikingparts();
+    -- No FK check for strikingparts
+    CALL staging.feed_strikingparts();
+
+$proc$;
+
+-- Loads and processes all technics from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_technics()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_technics();
+    -- No FK check for technics
+    CALL staging.feed_technics();
+
+$proc$;
+
+-- Loads and processes all stands from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_stands()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_stands();
+    -- No FK check for stands
+    CALL staging.feed_stands();
+
+$proc$;
+
+-- Loads and processes all grades from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_grades()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_grades();
+    -- No FK check for grades
+    CALL staging.feed_grades();
+
+$proc$;
+
+-- Loads and processes all kihon_inventory from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kihon_inventory()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kihon_inventory();
+    CALL staging.chkfk_kihon_inventory();
+    CALL staging.feed_kihon_inventory();
+
+$proc$;
+
+-- Loads and processes all kihon_sequences from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kihon_sequences()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kihon_sequences();
+    CALL staging.chkfk_kihon_sequences();
+    CALL staging.feed_kihon_sequences();
+
+$proc$;
+
+-- Loads and processes all kihon_tx from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kihon_tx()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kihon_tx();
+    CALL staging.chkfk_kihon_tx();
+    CALL staging.feed_kihon_tx();
+
+$proc$;
+
+-- Loads and processes all Kata_inventory from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_Kata_inventory()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_Kata_inventory();
+    -- No FK check for Kata_inventory
+    CALL staging.feed_Kata_inventory();
+
+$proc$;
+
+-- Loads and processes all kata_sequence from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kata_sequence()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kata_sequence();
+    CALL staging.chkfk_kata_sequence();
+    CALL staging.feed_kata_sequence();
+
+$proc$;
+
+-- Loads and processes all kata_sequence_waza from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kata_sequence_waza()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kata_sequence_waza();
+    CALL staging.chkfk_kata_sequence_waza();
+    CALL staging.feed_kata_sequence_waza();
+
+$proc$;
+
+-- Loads and processes all kata_tx from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.load_kata_tx()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_kata_tx();
+    CALL staging.chkfk_kata_tx();
+    CALL staging.feed_kata_tx();
+
+$proc$;
+
+-- Loads and processes all kihon-related tables from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.dump_kihon()
+LANGUAGE SQL AS $proc$
+    CALL staging.fill_kihon_inventory();
+    CALL staging.chkfk_kihon_inventory();
+    CALL staging.feed_kihon_inventory();
+
+    CALL staging.fill_kihon_sequences();
+    CALL staging.chkfk_kihon_sequences();
+    CALL staging.feed_kihon_sequences();
+
+    CALL staging.fill_kihon_tx();
+    CALL staging.chkfk_kihon_tx();
+    CALL staging.feed_kihon_tx();
+$proc$;
+
+-- Loads and processes all kata-related tables from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.dump_kata()
+LANGUAGE SQL AS $proc$
+    CALL staging.feed_kihon_inventory();
+
+    CALL staging.fill_kihon_sequences();
+    CALL staging.chkfk_kihon_sequences();
+    CALL staging.feed_kihon_sequences();
+
+    CALL staging.fill_kihon_tx();
+    CALL staging.chkfk_kihon_tx();
+    CALL staging.feed_kihon_tx();
+
+$proc$;
+
+-- Loads and processes all kata-related tables from staging to ski schema
+CREATE OR REPLACE PROCEDURE staging.dump_kata()
+LANGUAGE SQL AS $proc$
+
+    CALL staging.fill_Kata_inventory();
+    -- No FK check for Kata_inventory
+    CALL staging.feed_Kata_inventory();
+
+    CALL staging.fill_kata_sequence();
+    CALL staging.chkfk_kata_sequence();
+    CALL staging.feed_kata_sequence();
+
+    CALL staging.fill_kata_sequence_waza();
+    CALL staging.chkfk_kata_sequence_waza();
+    CALL staging.feed_kata_sequence_waza();
+
+    CALL staging.fill_kata_tx();
+    CALL staging.chkfk_kata_tx();
+    CALL staging.feed_kata_tx();
+
+$proc$;
