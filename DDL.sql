@@ -240,7 +240,8 @@ CREATE TABLE ski.kata_tx (
     intermediate_stand SMALLINT REFERENCES ski.stands(id_stand),
     notes TEXT,
     resource_url TEXT ,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED
+    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED ,
+    CONSTRAINT unique_kata_tx UNIQUE (from_seq, to_seq)
 );
 
 -- Valutare come modellare il bunkai, catalogo e riferimento al kata, ma valutare le info
