@@ -1508,6 +1508,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequences()
 ;
 
 -- Kata Sequence Waza
+-- pq: WITH query "tbl_update" does not have a RETURNING clause 
 CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequence_waza()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
@@ -1519,7 +1520,21 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequence_waza()
   BEGIN
   SELECT INTO seq_adj setval('ski.seq_kata_id_kswaza', MAX(id_kswaza), true) FROM staging.dom_kata_sequence_waza;
   SELECT INTO tms_op CURRENT_TIMESTAMP;
-    UPDATE staging.kata_sequence_waza SET staging_autoid = false WHERE staging_autoid IS NULL;
+
+  WITH 
+    assign_id AS (
+      UPDATE staging.kata_sequence_waza
+      SET id_kswaza = nextval('ski.seq_kata_id_kswaza')
+      WHERE id_kswaza IS NULL
+      RETURNING id_kswaza
+    )
+  UPDATE staging.kata_sequence_waza
+    SET staging_autoid = true
+    FROM assign_id
+    WHERE kata_sequence_waza.id_kswaza = assign_id.id_kswaza;
+
+  UPDATE staging.kata_sequence_waza SET staging_autoid = false WHERE staging_autoid IS NULL;
+
     WITH
     dupkey AS (
     SELECT l.id_kswaza, l.sequence_id, l.arto, l.technic_id, l.strikingpart_id, l.technic_target_id, l.notes
@@ -1558,7 +1573,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequence_waza()
       --   strikingpart_id = EXCLUDED.strikingpart_id,
       --   technic_target_id = EXCLUDED.technic_target_id,
       --   notes = EXCLUDED.notes
-      -- RETURNING id_kswaza
+      RETURNING id_kswaza
     ),
     details AS (
       SELECT base.id_kswaza,
