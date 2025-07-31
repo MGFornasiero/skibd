@@ -1,5 +1,15 @@
 DROP SCHEMA ski CASCADE;
+DROP SCHEMA bkp CASCADE;
+DROP SCHEMA staging CASCADE;
+DROP SCHEMA upsert CASCADE;
+DROP SCHEMA reject CASCADE;
+
 CREATE SCHEMA ski;
+
+CREATE SCHEMA bkp;
+CREATE SCHEMA staging;
+CREATE SCHEMA upsert;
+CREATE SCHEMA reject;
 
 CREATE TYPE ski.grade_type AS ENUM (
     'kyu',
@@ -610,16 +620,6 @@ CREATE OR REPLACE FUNCTION ski.ts_normalizer(
         SELECT  coalesce(_name_rank, 0)*_name_wht + coalesce(_description_rank, 0)*_description_wht + coalesce(_notes_rank, 0)*_notes_wht;
     $funzione$
 ;
-
-
-
-DROP SCHEMA staging CASCADE;
-DROP SCHEMA upsert CASCADE;
-DROP SCHEMA reject CASCADE;
-
-CREATE SCHEMA staging;
-CREATE SCHEMA upsert;
-CREATE SCHEMA reject;
 
 CREATE TABLE staging.targets(
   id_target SMALLINT UNIQUE,
@@ -2453,3 +2453,382 @@ CREATE OR REPLACE PROCEDURE staging.clean(_ts integer)
     DELETE FROM staging.kata_tx ;
   $proc$
 ;
+
+CREATE TABLE bkp.targets(
+    bkp TIMESTAMP ,
+    id_target SMALLINT,
+    name VARCHAR(255) ,
+    original_name VARCHAR(255),
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.strikingparts( 
+    bkp TIMESTAMP ,
+    id_part SMALLINT ,
+    name VARCHAR(255),
+    translation VARCHAR(255),
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.technics(
+    bkp TIMESTAMP ,
+    id_technic SMALLINT,
+    waza ski.waza_type,
+    name VARCHAR(255) ,
+    -- aka VARCHAR(255) ,
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.stands(
+    bkp TIMESTAMP ,
+    id_stand SMALLINT ,
+    name VARCHAR(255) ,
+    description TEXT,
+    illustration_url TEXT,
+    notes TEXT
+)
+; 
+
+CREATE TABLE bkp.grades(
+    bkp TIMESTAMP ,
+    id_grade SMALLINT ,
+    gtype ski.grade_type ,
+    grade SMALLINT ,
+    color ski.beltcolor
+)
+; 
+
+CREATE TABLE bkp.kihon_inventory(
+    bkp TIMESTAMP ,
+    id_inventory SMALLINT ,
+    grade_id SMALLINT ,
+    number SMALLINT ,
+    notes TEXT
+)
+; 
+
+CREATE TABLE bkp.kihon_sequences(
+    bkp TIMESTAMP ,
+    id_sequence SMALLINT ,
+    inventory_id SMALLINT ,
+    seq_num SMALLINT , -- Posizione ordinale nella sequenza
+    stand SMALLINT ,
+    techinc SMALLINT ,
+    gyaku bool,
+    target_hgt ski.target_hgt ,
+    notes TEXT ,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.kihon_tx(
+    bkp TIMESTAMP ,
+    id_tx SMALLINT,
+    from_seq SMALLINT, 
+    to_seq SMALLINT,
+    movement ski.movements ,
+    notes TEXT,
+    tempo ski.tempo ,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.Kata_inventory(
+    bkp TIMESTAMP ,
+    id_kata SMALLINT,
+    kata VARCHAR(255) ,
+    serie ski.kata_series,
+    starting_leg ski.sides ,
+    notes TEXT,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.kata_sequence(
+    bkp TIMESTAMP ,
+    id_sequence SMALLINT ,
+    kata_id SMALLINT ,
+    seq_num SMALLINT ,
+    stand_id SMALLINT ,
+    speed ski.tempo ,
+    side ski.sides, -- lato della guardia
+    embusen ski.embusen_points ,
+    facing ski.absolute_directions, -- direzioni cardinali rispetto all' inizio
+    kiai bool,
+    notes TEXT,
+    resource_url TEXT
+)
+; 
+
+CREATE TABLE bkp.kata_sequence_waza (
+    bkp TIMESTAMP ,
+    id_kswaza SMALLINT ,
+    sequence_id SMALLINT ,
+    arto ski.arti,
+    technic_id SMALLINT ,
+    strikingpart_id SMALLINT ,
+    technic_target_id SMALLINT ,
+    notes TEXT
+)
+;
+
+CREATE TABLE bkp.kata_tx (
+    bkp TIMESTAMP ,
+    id_tx SMALLINT ,
+    from_seq SMALLINT ,
+    to_seq SMALLINT ,
+    tempo ski.tempo ,
+    direction ski.sides ,
+    intermediate_stand SMALLINT ,
+    notes TEXT,
+    resource_url TEXT 
+)
+;
+
+CREATE  OR REPLACE PROCEDURE ski.bkp()
+    LANGUAGE PLPGSQL
+    AS $proc$
+    DECLARE
+    tms_op timestamp;
+    BEGIN
+    SELECT INTO tms_op date_trunc('minute', CURRENT_TIMESTAMP);
+    INSERT INTO bkp.targets (
+        bkp  ,
+        id_target ,
+        name  ,
+        original_name ,
+        description ,
+        notes ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_target ,
+        name  ,
+        original_name ,
+        description ,
+        notes ,
+        resource_url 
+    FROM ski.targets
+    ; 
+
+    INSERT INTO bkp.strikingparts ( 
+        bkp  ,
+        id_part  ,
+        name ,
+        translation ,
+        description ,
+        notes ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_part  ,
+        name ,
+        translation ,
+        description ,
+        notes ,
+        resource_url 
+    FROM ski.strikingparts
+    ; 
+
+    INSERT INTO bkp.technics (
+        bkp  ,
+        id_technic ,
+        waza ,
+        name  ,
+        -- aka  ,
+        description ,
+        notes ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_technic ,
+        waza ,
+        name  ,
+        description ,
+        notes ,
+        resource_url 
+    FROM ski.technics
+    ; 
+    INSERT INTO bkp.stands (
+        bkp  ,
+        id_stand  ,
+        name  ,
+        description ,
+        illustration_url ,
+        notes 
+    ) SELECT tms_op ,
+        id_stand  ,
+        name  ,
+        description ,
+        illustration_url ,
+        notes
+    FROM ski.stands
+    ; 
+
+    INSERT INTO bkp.grades (
+        bkp  ,
+        id_grade  ,
+        gtype ,
+        grade  ,
+        color
+    ) SELECT tms_op ,
+        id_grade  ,
+        gtype ,
+        grade  ,
+        color
+    FROM ski.grades
+    ;
+
+    INSERT INTO bkp.kihon_inventory (
+        bkp  ,
+        id_inventory  ,
+        grade_id  ,
+        number  ,
+        notes 
+    ) SELECT tms_op ,
+        id_inventory  ,
+        grade_id  ,
+        number  ,
+        notes 
+    FROM ski.kihon_inventory
+    ; 
+
+    INSERT INTO bkp.kihon_sequences (
+        bkp  ,
+        id_sequence  ,
+        inventory_id  ,
+        seq_num  ,
+        stand  ,
+        techinc  ,
+        gyaku ,
+        target_hgt ,
+        notes  ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_sequence  ,
+        inventory_id  ,
+        seq_num  ,
+        stand  ,
+        techinc  ,
+        gyaku ,
+        target_hgt ,
+        notes  ,
+        resource_url 
+    FROM ski.kihon_sequences
+    ; --Sequenza delle tecniche che compongono i kihon
+
+    INSERT INTO bkp.kihon_tx (
+        bkp  ,
+        id_tx ,
+        from_seq , 
+        to_seq ,
+        movement ,
+        notes ,
+        tempo ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_tx ,
+        from_seq , 
+        to_seq ,
+        movement ,
+        notes ,
+        tempo ,
+        resource_url 
+    FROM ski.kihon_tx
+    ; --Passaggio da una tecnica all' altra 
+
+    INSERT INTO bkp.Kata_inventory (
+        bkp  ,
+        id_kata ,
+        kata  ,
+        serie ,
+        starting_leg ,
+        notes ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_kata ,
+        kata  ,
+        serie ,
+        starting_leg ,
+        notes ,
+        resource_url 
+    FROM ski.Kata_inventory
+    ; -- Inventario in forma normale dei kata
+
+    INSERT INTO bkp.kata_sequence (
+        bkp  ,
+        id_sequence  ,
+        kata_id  ,
+        seq_num  ,
+        stand_id  ,
+        speed ,
+        side , 
+        embusen ,
+        facing , 
+        kiai ,
+        notes ,
+        resource_url 
+    ) SELECT tms_op ,
+        id_sequence  ,
+        kata_id  ,
+        seq_num  ,
+        stand_id  ,
+        speed ,
+        side , 
+        embusen ,
+        facing , 
+        kiai,
+        notes ,
+        resource_url 
+    FROM ski.kata_sequence
+    ; 
+
+    INSERT INTO bkp.kata_sequence_waza (
+        bkp  ,
+        id_kswaza  ,
+        sequence_id  ,
+        arto ,
+        technic_id  ,
+        strikingpart_id  ,
+        technic_target_id  ,
+        notes 
+    ) SELECT tms_op ,
+        id_kswaza  ,
+        sequence_id  ,
+        arto ,
+        technic_id  ,
+        strikingpart_id  ,
+        technic_target_id  ,
+        notes 
+    FROM ski.kata_sequence_waza
+    ;
+
+    INSERT INTO bkp.kata_tx (
+        bkp  ,
+        id_tx  ,
+        from_seq  ,
+        to_seq  ,
+        tempo ,
+        direction ,
+        intermediate_stand  ,
+        notes ,
+        resource_url  
+    ) SELECT tms_op ,
+        id_tx  ,
+        from_seq  ,
+        to_seq  ,
+        tempo ,
+        direction ,
+        intermediate_stand  ,
+        notes ,
+        resource_url  
+    FROM ski.kata_tx
+    ;
+    END;
+$proc$;
