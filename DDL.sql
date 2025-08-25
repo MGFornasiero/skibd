@@ -266,13 +266,10 @@ CREATE TABLE ski.kata_tx (
 
 -- FUNZIONI AUSILIARIE PER RECUPERARE LE INFO
 
-CREATE OR REPLACE FUNCTION ski.get_gradeid(
-    _grade NUMERIC,
-    _type VARCHAR
-    )
-    returns NUMERIC
+CREATE OR REPLACE FUNCTION ski.get_gradeid(_grade INT,  _type VARCHAR )
+    returns SMALLINT
     language sql
-    as $$
+    AS $$
         SELECT id_grade 
         FROM ski.grades 
         WHERE grade = _grade
@@ -280,16 +277,16 @@ CREATE OR REPLACE FUNCTION ski.get_gradeid(
         ;
     $$
 ;
---SELECT ski.get_gradeid(1,'dan');
+
 
 CREATE OR REPLACE FUNCTION ski.get_kihons(
-    _grade NUMERIC,
+    _grade INT,
     _type VARCHAR
     )
     RETURNS TABLE(
-        id_inventory NUMERIC ,
-        grade_id NUMERIC ,
-        number NUMERIC
+        id_inventory INT ,
+        grade_id INT ,
+        number INT
     )
     LANGUAGE SQL
     AS $$
@@ -300,10 +297,10 @@ CREATE OR REPLACE FUNCTION ski.get_kihons(
 --SELECT * FROM ski.get_kihons(1,'dan');
 
 CREATE OR REPLACE FUNCTION ski.get_kihonid(
-    _gradeid NUMERIC,
-    _num NUMERIC
+    _gradeid INT,
+    _num INT
     )
-    returns NUMERIC
+    returns INT
     LANGUAGE SQL
     AS $$
     SELECT id_inventory FROM ski.kihon_inventory WHERE grade_id = _gradeid AND number =_num;
@@ -312,7 +309,7 @@ $$;
 
 
 CREATE OR REPLACE FUNCTION ski.get_technic_info(
-    _technic_id NUMERIC
+    _technic_id INT
     )
     RETURNS TABLE(
         id_technic SMALLINT,
@@ -337,7 +334,7 @@ CREATE OR REPLACE FUNCTION ski.get_technic_info(
 -- SELECT ski.get_technic_info(12);
 
 CREATE OR REPLACE FUNCTION ski.get_stand_info(
-    _stand_id NUMERIC
+    _stand_id INT
     )
     RETURNS TABLE(
         id_stand SMALLINT,
@@ -360,7 +357,7 @@ CREATE OR REPLACE FUNCTION ski.get_stand_info(
 
 
 CREATE OR REPLACE FUNCTION ski.get_strikingparts_info(
-    _id_part NUMERIC
+    _id_part INT
     )
     RETURNS TABLE(
         id_part SMALLINT,
@@ -384,7 +381,7 @@ CREATE OR REPLACE FUNCTION ski.get_strikingparts_info(
 ;
 
 CREATE OR REPLACE FUNCTION ski.get_target_info(
-    _id_target NUMERIC
+    _id_target INT
     )
     RETURNS TABLE(
         id_target SMALLINT,
@@ -408,7 +405,7 @@ CREATE OR REPLACE FUNCTION ski.get_target_info(
 ;
 
 
-CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id NUMERIC)
+CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id INT)
     RETURNS TABLE(
         id_sequence SMALLINT ,
         kata_id SMALLINT ,
@@ -473,7 +470,7 @@ CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id NUMERIC)
 ;
 --SELECT * FROM ski.get_katasequence(1);
 
-CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id NUMERIC)
+CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id INT)
     RETURNS TABLE(
         id_tx SMALLINT , 
         from_seq SMALLINT ,
@@ -498,6 +495,133 @@ CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id NUMERIC)
     $$
 ;
 --SELECT * FROM ski.get_katatx(1);
+
+CREATE OR REPLACE FUNCTION ski.get_kihon_steps(
+    _grade_id INT,
+    _sequenza INT
+)
+RETURNS TABLE (
+    id_sequence SMALLINT,
+    inventory_id SMALLINT,
+    seq_num SMALLINT,
+    stand SMALLINT,
+    techinc SMALLINT,
+    gyaku BOOLEAN,
+    target_hgt ski.target_hgt,
+    notes TEXT,
+    resource_url TEXT,
+    stand_name TEXT,
+    technic_name TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT seq.id_sequence,
+           seq.inventory_id,
+           seq.seq_num,
+           seq.stand,
+           seq.techinc,
+           seq.gyaku,
+           seq.target_hgt,
+           seq.notes,
+           seq.resource_url,
+           stand.name AS stand_name,
+           technic.name AS technic_name
+    FROM ski.kihon_sequences AS seq
+    JOIN ski.kihon_inventory AS inv
+         ON seq.inventory_id = inv.id_inventory
+    LEFT JOIN ski.stands AS stand
+         ON seq.stand = stand.id_stand
+    LEFT JOIN ski.technics AS technic
+         ON seq.techinc = technic.id_technic
+    WHERE inv.grade_id = _grade_id
+      AND inv.number = _sequenza
+    ORDER BY seq.seq_num;
+$$;
+--SELECT * FROM ski.get_kihonsequence(3, 2);
+
+CREATE OR REPLACE FUNCTION ski.get_kihon_tx(
+    _grade_id INT,
+    _sequenza INT
+)
+RETURNS TABLE (
+    id_tx SMALLINT,
+    from_seq SMALLINT,
+    to_seq SMALLINT,
+    movement ski.movements,
+    tempo ski.tempo,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    WITH relevant_sequences AS (
+        SELECT seq.id_sequence
+        FROM ski.kihon_sequences AS seq
+        JOIN ski.kihon_inventory AS inv
+             ON seq.inventory_id = inv.id_inventory
+        WHERE inv.grade_id = _grade_id
+          AND inv.number = _sequenza
+    )
+    SELECT tx.id_tx,
+           tx.from_seq,
+           tx.to_seq,
+           tx.movement,
+           tx.tempo,
+           tx.notes,
+           tx.resource_url
+    FROM ski.kihon_tx AS tx
+    WHERE tx.from_seq IN (SELECT id_sequence FROM relevant_sequences)
+       OR tx.to_seq IN (SELECT id_sequence FROM relevant_sequences)
+    ORDER BY tx.from_seq;
+$$;
+--SELECT * FROM ski.get_kihon_tx(3, 2);
+
+
+CREATE OR REPLACE FUNCTION ski.kihon_frmlist(
+    _grade_id INT
+)
+RETURNS TABLE (
+    number SMALLINT,
+    seq_num SMALLINT,
+    movement ski.movements,
+    technic_id SMALLINT,
+    gyaku BOOLEAN,
+    tecnica TEXT,
+    stand_id SMALLINT,
+    posizione TEXT,
+    target_hgt ski.target_hgt,
+    notes TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT 
+        inv.number,
+        seq.seq_num,
+        tx.movement,
+        seq.techinc AS technic_id,
+        seq.gyaku,
+        CASE
+             WHEN seq.gyaku THEN CONCAT('(Gyaku) ', tech.name)
+             ELSE tech.name
+        END AS tecnica,
+        seq.stand AS stand_id,
+        stands.name AS posizione,
+        seq.target_hgt,
+        seq.notes
+    FROM ski.kihon_sequences AS seq
+    INNER JOIN ski.kihon_inventory AS inv
+        ON seq.inventory_id = inv.id_inventory
+    LEFT JOIN ski.kihon_tx AS tx 
+        ON seq.id_sequence = tx.to_seq 
+    LEFT JOIN ski.technics AS tech
+        ON seq.techinc = tech.id_technic
+    LEFT JOIN ski.stands AS stands
+        ON seq.stand = stands.id_stand
+    WHERE inv.grade_id = _grade_id
+      AND seq.seq_num != 0
+    ORDER BY inv.number, seq.seq_num;
+$$;
+--SELECT * FROM ski.kihon_frmlist(3);
 
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
     RETURNS TABLE(
@@ -525,6 +649,7 @@ CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
         ;
     $$
 ;
+
 
 CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
     RETURNS TABLE(
