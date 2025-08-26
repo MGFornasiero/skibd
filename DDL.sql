@@ -264,6 +264,56 @@ CREATE TABLE ski.kata_tx (
 --     sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
 -- );
 
+-- Full-text search indexes
+CREATE INDEX idx_targets_tsv_name ON ski.targets USING gin(tsv_name);
+CREATE INDEX idx_targets_tsv_description ON ski.targets USING gin(tsv_description);
+CREATE INDEX idx_targets_tsv_notes ON ski.targets USING gin(tsv_notes);
+
+CREATE INDEX idx_strikingparts_tsv_name ON ski.strikingparts USING gin(tsv_name);
+CREATE INDEX idx_strikingparts_tsv_description ON ski.strikingparts USING gin(tsv_description);
+CREATE INDEX idx_strikingparts_tsv_notes ON ski.strikingparts USING gin(tsv_notes);
+
+CREATE INDEX idx_technics_tsv_name ON ski.technics USING gin(tsv_name);
+CREATE INDEX idx_technics_tsv_description ON ski.technics USING gin(tsv_description);
+CREATE INDEX idx_technics_tsv_notes ON ski.technics USING gin(tsv_notes);
+
+CREATE INDEX idx_stands_tsv_name ON ski.stands USING gin(tsv_name);
+CREATE INDEX idx_stands_tsv_description ON ski.stands USING gin(tsv_description);
+CREATE INDEX idx_stands_tsv_notes ON ski.stands USING gin(tsv_notes);
+
+-- Kihon joins
+CREATE INDEX idx_kihon_inventory_grade ON ski.kihon_inventory(grade_id);
+CREATE INDEX idx_kihon_sequences_inventory ON ski.kihon_sequences(inventory_id);
+CREATE INDEX idx_kihon_sequences_stand ON ski.kihon_sequences(stand);
+CREATE INDEX idx_kihon_sequences_technic ON ski.kihon_sequences(techinc);
+
+CREATE INDEX idx_kihon_tx_fromseq ON ski.kihon_tx(from_seq);
+CREATE INDEX idx_kihon_tx_toseq ON ski.kihon_tx(to_seq);
+
+-- Kata joins
+CREATE INDEX idx_kata_sequence_kata ON ski.kata_sequence(kata_id);
+CREATE INDEX idx_kata_sequence_stand ON ski.kata_sequence(stand_id);
+
+CREATE INDEX idx_kata_waza_sequence ON ski.kata_sequence_waza(sequence_id);
+CREATE INDEX idx_kata_waza_technic ON ski.kata_sequence_waza(technic_id);
+CREATE INDEX idx_kata_waza_strikingpart ON ski.kata_sequence_waza(strikingpart_id);
+CREATE INDEX idx_kata_waza_target ON ski.kata_sequence_waza(technic_target_id);
+
+CREATE INDEX idx_kata_tx_fromseq ON ski.kata_tx(from_seq);
+CREATE INDEX idx_kata_tx_toseq ON ski.kata_tx(to_seq);
+CREATE INDEX idx_kata_tx_intermediatestand ON ski.kata_tx(intermediate_stand);
+
+-- lookup indexes
+CREATE INDEX idx_targets_name ON ski.targets(name);
+CREATE INDEX idx_strikingparts_name ON ski.strikingparts(name);
+CREATE INDEX idx_technics_name ON ski.technics(name);
+CREATE INDEX idx_stands_name ON ski.stands(name);
+CREATE INDEX idx_katainventory_name ON ski.kata_inventory(kata);
+
+CREATE INDEX idx_grades_gtype ON ski.grades(gtype);
+CREATE INDEX idx_kata_sequence_side ON ski.kata_sequence(side);
+CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
+
 -- FUNZIONI AUSILIARIE PER RECUPERARE LE INFO
 
 CREATE OR REPLACE FUNCTION ski.get_gradeid(_grade INT,  _type VARCHAR )
