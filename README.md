@@ -2,4 +2,4 @@
 DB Karate Shotokan
 
 Il file DDL genera la struttura e le funzioni
-Il file insert è un esempio di popolamento
+Gli insert avvengono sulla tabelle nello schema Staging, che triggera il meccanismo di update ed insert sulle tabelle in ski
