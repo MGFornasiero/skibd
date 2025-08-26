@@ -297,7 +297,7 @@ INSERT INTO staging.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
 ;
 
 
-INSERT INTO staging.kihon_sequences(id_sequence, inventory_id , seq_num,stand,techinc,gyaku,target_hgt,notes,resource_url) VALUES 
+INSERT INTO staging.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,technic_id,gyaku,target_hgt,notes,resource_url) VALUES 
     ( 1 ,1 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 2 ,1 ,1,4 , 15 ,'false' ,NULL , NULL , NULL ),
     ( 3 ,2 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
@@ -577,7 +577,7 @@ INSERT INTO staging.kihon_sequences(id_sequence, inventory_id , seq_num,stand,te
 ;
 
 
-INSERT INTO staging.kihon_tx(id_tx ,from_seq ,to_seq ,movement ,notes ,resource_url ) VALUES
+INSERT INTO staging.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement ,notes ,resource_url ) VALUES
     ( 1 , 1 , 2, 'Still' , NULL , NULL ),
     ( 4 , 3 , 4, 'Still' , NULL , NULL ),
     ( 7 , 5 , 6, 'Still' , NULL , NULL ),
@@ -922,8 +922,8 @@ INSERT INTO staging.kata_sequence_waza (
 
 INSERT INTO staging.kata_tx(
     --id_tx ,
-    from_seq ,
-    to_seq ,
+    from_sequence ,
+    to_sequence ,
     tempo ,
     direction,
     notes 

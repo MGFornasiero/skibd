@@ -1,801 +1,756 @@
-DROP SCHEMA ski CASCADE;
-DROP SCHEMA bkp CASCADE;
-DROP SCHEMA staging CASCADE;
-DROP SCHEMA upsert CASCADE;
-DROP SCHEMA reject CASCADE;
+DROP SCHEMA IF EXISTS ski CASCADE;
+DROP SCHEMA IF EXISTS bkp CASCADE;
+DROP SCHEMA IF EXISTS staging CASCADE;
+DROP SCHEMA IF EXISTS upsert CASCADE;
+DROP SCHEMA IF EXISTS reject CASCADE;
+
+DROP TYPE IF EXISTS arti CASCADE;
+DROP TYPE IF EXISTS beltcolor CASCADE;
+DROP TYPE IF EXISTS absolute_directions CASCADE;
+DROP TYPE IF EXISTS embusen_points CASCADE;
+DROP TYPE IF EXISTS tempo CASCADE;
+DROP TYPE IF EXISTS waza_type CASCADE;
+DROP TYPE IF EXISTS target_hgt CASCADE;
+DROP TYPE IF EXISTS kata_series CASCADE;
+DROP TYPE IF EXISTS movements CASCADE;
+DROP TYPE IF EXISTS sides CASCADE;
+DROP TYPE IF EXISTS grade_type CASCADE;
 
 CREATE SCHEMA ski;
-
 CREATE SCHEMA bkp;
 CREATE SCHEMA staging;
 CREATE SCHEMA upsert;
 CREATE SCHEMA reject;
 
-CREATE TYPE ski.grade_type AS ENUM (
-    'kyu',
-    'dan'
-);
-CREATE TYPE ski.sides AS ENUM (
-    'sx',
-    'frontal',
-    'dx'
-);
-CREATE TYPE ski.movements AS ENUM(
-    'Fwd',
-    'Still',
-    'Bkw'
-);
-CREATE TYPE ski.kata_series AS ENUM (
-    'Heian',
-    'Tekki',
-    'Sentei'
-);
-CREATE TYPE ski.target_hgt AS ENUM(
-    'Jodan',
-    'Chudan',
-    'Gedan'
-);
-CREATE TYPE ski.waza_type AS ENUM(
-    'Uke',
-    'Uchi',
-    'Geri',
-    'NA',
-    '_'
-);
-CREATE TYPE ski.tempo AS ENUM(
-    'Legato',
-    'Fast',
-    'Normal',
-    'Slow',
-    'Breath'
+-- =============================================================
+-- Types (moved to public)
+-- =============================================================
+
+-- Karate grading (kyu/dan)
+CREATE TYPE public.grade_type AS ENUM ('kyu', 'dan');
+
+-- Left/right/frontal sides
+CREATE TYPE public.sides AS ENUM ('sx', 'frontal', 'dx');
+
+-- Movements between steps
+CREATE TYPE public.movements AS ENUM ('Fwd', 'Still', 'Bkw');
+
+-- Kata series
+CREATE TYPE public.kata_series AS ENUM ('Heian', 'Tekki', 'Sentei');
+
+-- Target heights
+CREATE TYPE public.target_hgt AS ENUM ('Jodan', 'Chudan', 'Gedan');
+
+-- Technique type
+CREATE TYPE public.waza_type AS ENUM ('Uke', 'Uchi', 'Geri', 'NA', '_');
+
+-- Tempo
+CREATE TYPE public.tempo AS ENUM ('Legato', 'Fast', 'Normal', 'Slow', 'Breath');
+
+-- Embusen point (cartesian plane)
+CREATE TYPE public.embusen_points AS (
+  x SMALLINT,
+  y SMALLINT
 );
 
-CREATE TYPE ski.embusen_points AS (
-    x SMALLINT,
-    y SMALLINT
-); -- Definisce la posizione nello spazio come piano cartesiano con 0 in posizione del saluto
-
-CREATE TYPE ski.arti AS ENUM(
-    'Braccio DX',
-    'Braccio SX',
-    'Braccia',
-    'Gamba DX',
-    'Gamba SX',
-    'Gambe',
-    'NA'
+-- Limbs (arti)
+CREATE TYPE public.arti AS ENUM (
+  'Braccio DX', 'Braccio SX', 'Braccia',
+  'Gamba DX',   'Gamba SX',   'Gambe',
+  'NA'
 );
 
-CREATE TYPE ski.beltcolor AS ENUM(
-    'bianco',
-    'giallo',
-    'arancio',
-    'verde',
-    'blu',
-    'nero'
-); -- Colori delle cinture
+-- Belt colors
+CREATE TYPE public.beltcolor AS ENUM ('bianco','giallo','arancio','verde','blu','marrone','nero');
 
-CREATE TYPE ski.absolute_directions AS ENUM(
-    'N',
-    'NE',
-    'E',
-    'SE',
-    'S',
-    'SO',
-    'O',
-    'NO'
-); -- Direzione assoluta rispetto al saluto inizale
-
-CREATE SEQUENCE ski.seq_id_target AS SMALLINT ;
-CREATE SEQUENCE ski.seq_id_part AS SMALLINT ;
-CREATE SEQUENCE ski.seq_id_technic AS SMALLINT ;
-CREATE SEQUENCE ski.seq_id_stand AS SMALLINT ;
-CREATE SEQUENCE ski.seq_id_grade AS SMALLINT ;
-
-CREATE SEQUENCE ski.seq_kihon_id_inventory AS SMALLINT ;
-CREATE SEQUENCE ski.seq_kihon_id_sequence AS SMALLINT ;
-CREATE SEQUENCE ski.seq_kihon_id_tx AS SMALLINT ;
+-- Absolute directions
+CREATE TYPE public.absolute_directions AS ENUM ('N','NE','E','SE','S','SO','O','NO');
 
 
-CREATE SEQUENCE ski.seq_kata_id_kata AS SMALLINT ;
-CREATE SEQUENCE ski.seq_kata_id_sequence AS SMALLINT ;
-CREATE SEQUENCE ski.seq_kata_id_kswaza AS SMALLINT ;
-CREATE SEQUENCE ski.seq_kata_id_tx AS SMALLINT ;
+-- =============================================================
+-- Sequences (kept in `ski`)
+-- =============================================================
+CREATE SEQUENCE ski.seq_id_target  AS SMALLINT;
+CREATE SEQUENCE ski.seq_id_part    AS SMALLINT;
+CREATE SEQUENCE ski.seq_id_technic AS SMALLINT;
+CREATE SEQUENCE ski.seq_id_stand   AS SMALLINT;
+CREATE SEQUENCE ski.seq_id_grade   AS SMALLINT;
 
---                                      DOMANINS TABLE
+CREATE SEQUENCE ski.seq_kihon_id_inventory AS SMALLINT;
+CREATE SEQUENCE ski.seq_kihon_id_sequence  AS SMALLINT;
+CREATE SEQUENCE ski.seq_kihon_id_tx        AS SMALLINT;
 
-CREATE TABLE ski.targets(
-    id_target SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_target'),
-    name VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255),
-    description TEXT,
-    notes TEXT,
-    resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_targetname UNIQUE(name)
-); -- parti del corpo colpite
+CREATE SEQUENCE ski.seq_kata_id_kata     AS SMALLINT;
+CREATE SEQUENCE ski.seq_kata_id_sequence AS SMALLINT;
+CREATE SEQUENCE ski.seq_kata_id_kswaza   AS SMALLINT;
+CREATE SEQUENCE ski.seq_kata_id_tx       AS SMALLINT;
 
-CREATE TABLE ski.strikingparts( 
-    id_part SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_part'),
-    name VARCHAR(255) NOT NULL,
-    translation VARCHAR(255),
-    description TEXT,
-    notes TEXT,
-    resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name) || to_tsvector('simple',translation)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_strikingpartsname UNIQUE(name)
-); -- parti del corpo che colpiscono
+-- =============================================================
+-- Domain Tables (in schema ski)
+-- =============================================================
 
-CREATE TABLE ski.technics(
-    id_technic SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technic'),
-    waza ski.waza_type,
-    name VARCHAR(255) NOT NULL,
-    -- aka VARCHAR(255) ,
-    description TEXT,
-    notes TEXT,
-    resource_url TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_technicname UNIQUE(name)
-); --Inventario delle tecniche
+-- -------------------------------------------------------------
+-- Table: ski.targets
+-- Body targets that can be struck.
+-- -------------------------------------------------------------
+CREATE TABLE ski.targets (
+  id_target SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_target'),
+  name           VARCHAR(255) NOT NULL,
+  original_name  VARCHAR(255),
+  description    TEXT,
+  notes          TEXT,
+  resource_url   TEXT,
+  tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_targets_name UNIQUE (name)
+);
 
-CREATE TABLE ski.stands(
-    id_stand SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_stand'),
-    name VARCHAR(255) NOT NULL,
-    -- aka VARCHAR(255) , -- altoro nome con la quale è conosciuta
-    description TEXT,
-    illustration_url TEXT,
-    notes TEXT,
-    tsv_name tsvector GENERATED ALWAYS AS (to_tsvector('simple',name)) STORED,
-    tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple',description)) STORED,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_standname UNIQUE(name)
-); --Inventario delle posizioni
+-- -------------------------------------------------------------
+-- Table: ski.strikingparts
+-- Limbs/parts used to strike.
+-- -------------------------------------------------------------
+CREATE TABLE ski.strikingparts (
+  id_part SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_part'),
+  name          VARCHAR(255) NOT NULL,
+  translation   VARCHAR(255),
+  description   TEXT,
+  notes         TEXT,
+  resource_url  TEXT,
+  tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name) || to_tsvector('simple', translation)) STORED,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_strikingparts_name UNIQUE (name)
+);
 
-CREATE TABLE ski.grades(
-    id_grade SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_grade'),
-    gtype ski.grade_type NOT NULL,
-    grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL ,
-    color ski.beltcolor,
-    CONSTRAINT unique_grade UNIQUE (gtype, grade)
-); -- forma normale della sequenza di gradi Kiu e Dan
+-- -------------------------------------------------------------
+-- Table: ski.technics
+-- Inventory of techniques (waza).
+-- -------------------------------------------------------------
+CREATE TABLE ski.technics (
+  id_technic SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technic'),
+  waza         public.waza_type,
+  name         VARCHAR(255) NOT NULL,
+  description  TEXT,
+  notes        TEXT,
+  resource_url TEXT,
+  tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_technics_name UNIQUE (name)
+);
+
+-- -------------------------------------------------------------
+-- Table: ski.stands
+-- Inventory of stances/positions.
+-- -------------------------------------------------------------
+CREATE TABLE ski.stands (
+  id_stand SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_stand'),
+  name             VARCHAR(255) NOT NULL,
+  description      TEXT,
+  illustration_url TEXT,
+  notes            TEXT,
+  tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_stands_name UNIQUE (name)
+);
+
+-- -------------------------------------------------------------
+-- Table: ski.grades
+-- Belt grading (kyu/dan) with color.
+-- -------------------------------------------------------------
+CREATE TABLE ski.grades (
+  id_grade SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_grade'),
+  gtype public.grade_type NOT NULL,
+  grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL,
+  color public.beltcolor,
+  CONSTRAINT uq_grades_gtype_grade UNIQUE (gtype, grade)
+);
 
 
---                                      COMPENDIUM TABLES
+-- =============================================================
+-- Compendium Tables (Kihon)
+-- =============================================================
 
-CREATE TABLE ski.kihon_inventory(
-    id_inventory SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_inventory'),
-    grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
-    number SMALLINT NOT NULL,
-    notes TEXT,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_kihoninventory UNIQUE (grade_id, number)
-); -- Inventario in forma normale con i kihon per ciascuna cintura
+-- -------------------------------------------------------------
+-- Table: ski.kihon_inventory
+-- Normalized inventory of kihon per grade.
+-- -------------------------------------------------------------
+CREATE TABLE ski.kihon_inventory (
+  id_inventory SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_inventory'),
+  grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
+  number   SMALLINT NOT NULL,
+  notes    TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_kihon_inventory UNIQUE (grade_id, number)
+);
 
-CREATE TABLE ski.kihon_sequences(
-    id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_sequence'),
-    inventory_id SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
-    seq_num SMALLINT NOT NULL, -- Posizione ordinale nella sequenza
-    stand SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
-    techinc SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
-    gyaku bool,
-    target_hgt ski.target_hgt ,
-    notes TEXT ,
-    resource_url TEXT,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_kihonsequence UNIQUE (inventory_id, seq_num)
-); --Sequenza delle tecniche che compongono i kihon
+-- -------------------------------------------------------------
+-- Table: ski.kihon_sequences
+-- Ordered sequence of techniques composing a kihon.
+-- -------------------------------------------------------------
+CREATE TABLE ski.kihon_sequences (
+  id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_sequence'),
+  inventory_id SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
+  seq_num      SMALLINT NOT NULL,
+  stand_id     SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
+  technic_id   SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  gyaku        BOOLEAN,
+  target_hgt   public.target_hgt,
+  notes        TEXT,
+  resource_url TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_kihon_sequences UNIQUE (inventory_id, seq_num)
+);
 
-CREATE TABLE ski.kihon_tx(
-    id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_tx'),
-    from_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence), 
-    to_seq SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
-    movement ski.movements ,
-    notes TEXT,
-    tempo ski.tempo ,
-    resource_url TEXT,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_kihontx UNIQUE (from_seq, to_seq)
-); --Passaggio da una tecnica all' altra 
+-- -------------------------------------------------------------
+-- Table: ski.kihon_tx
+-- Transitions between kihon steps.
+-- -------------------------------------------------------------
+CREATE TABLE ski.kihon_tx (
+  id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_tx'),
+  from_sequence SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
+  to_sequence   SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
+  movement   public.movements,
+  notes      TEXT,
+  tempo      public.tempo,
+  resource_url TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_kihon_tx UNIQUE (from_sequence, to_sequence)
+);
 
-CREATE TABLE ski.Kata_inventory(
-    id_kata SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kata'),
-    kata VARCHAR(255) NOT NULL,
-    serie ski.kata_series,
-    starting_leg ski.sides NOT NULL,
-    notes TEXT,
-    resource_url TEXT,
-    CONSTRAINT unique_kata UNIQUE (kata)
-); -- Inventario in forma normale dei kata
+-- =============================================================
+-- Compendium Tables (Kata)
+-- =============================================================
 
-CREATE TABLE ski.kata_sequence(
-    id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_sequence'),
-    kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata),
-    seq_num SMALLINT NOT NULL,
-    stand_id SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
-    speed ski.tempo ,
-    side ski.sides, -- lato della guardia
-    embusen ski.embusen_points ,
-    facing ski.absolute_directions, -- direzioni cardinali rispetto all' inizio
-    kiai bool,
-    notes TEXT,
-    resource_url TEXT,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED,
-    CONSTRAINT unique_kata_seq UNIQUE (kata_id, seq_num)
-); -- Sequenza in forma normale del kata
---le tecniche da eseguire sono nella tabella ski.kata_sequence_waza per rispettare forma normale potendo essercene più d'una.
---La forma corretta sarebbe avere ulteriore tabella di raccordo 1:n ma occorrerebbe ulteriore logica applicativa
--- Un alternativa sarebbe un tipo array ma non sarebbero disponibili i constraint e le ricerche.
+-- -------------------------------------------------------------
+-- Table: ski.kata_inventory
+-- Normalized inventory of kata.
+-- -------------------------------------------------------------
+CREATE TABLE ski.kata_inventory (
+  id_kata SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kata'),
+  kata         VARCHAR(255) NOT NULL,
+  serie        public.kata_series,
+  starting_leg public.sides NOT NULL,
+  notes        TEXT,
+  resource_url TEXT,
+  CONSTRAINT uq_kata_inventory_kata UNIQUE (kata)
+);
 
+-- -------------------------------------------------------------
+-- Table: ski.kata_sequence
+-- Normalized kata sequence (positions, directions, etc.).
+-- -------------------------------------------------------------
+CREATE TABLE ski.kata_sequence (
+  id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_sequence'),
+  kata_id   SMALLINT NOT NULL REFERENCES ski.kata_inventory(id_kata),
+  seq_num   SMALLINT NOT NULL,
+  stand_id  SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
+  speed     public.tempo,
+  side      public.sides,
+  embusen   public.embusen_points,
+  facing    public.absolute_directions,
+  kiai      BOOLEAN,
+  notes     TEXT,
+  resource_url TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_kata_sequence UNIQUE (kata_id, seq_num)
+);
+
+-- -------------------------------------------------------------
+-- Table: ski.kata_sequence_waza
+-- Techniques executed on each kata sequence step.
+-- -------------------------------------------------------------
 CREATE TABLE ski.kata_sequence_waza (
-    id_kswaza SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kswaza'),
-    sequence_id SMALLINT REFERENCES ski.kata_sequence(id_sequence),
-    arto ski.arti,
-    technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
-    strikingpart_id SMALLINT REFERENCES ski.strikingparts(id_part),
-    technic_target_id SMALLINT REFERENCES ski.targets(id_target),
-    notes TEXT,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED
+  id_kswaza SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kswaza'),
+  sequence_id       SMALLINT REFERENCES ski.kata_sequence(id_sequence),
+  arto              public.arti,
+  technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
+  technic_target_id SMALLINT REFERENCES ski.targets(id_target),
+  notes             TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED
 );
 
+-- -------------------------------------------------------------
+-- Table: ski.kata_tx
+-- Transitions between kata sequence steps.
+-- -------------------------------------------------------------
 CREATE TABLE ski.kata_tx (
-    id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_tx'),
-    from_seq SMALLINT NOT NULL ,
-    to_seq SMALLINT NOT NULL ,
-    tempo ski.tempo ,
-    direction ski.sides ,
-    intermediate_stand SMALLINT REFERENCES ski.stands(id_stand),
-    notes TEXT,
-    resource_url TEXT ,
-    tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple',notes)) STORED ,
-    CONSTRAINT unique_kata_tx UNIQUE (from_seq, to_seq)
+  id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_tx'),
+  from_sequence SMALLINT NOT NULL,
+  to_sequence   SMALLINT NOT NULL,
+  tempo public.tempo,
+  direction public.sides,
+  intermediate_stand_id SMALLINT REFERENCES ski.stands(id_stand),
+  notes TEXT,
+  resource_url TEXT,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT uq_kata_tx UNIQUE (from_sequence, to_sequence)
 );
+
+-- =============================================================
+-- Indexes (FTS + Join helpers)
+-- =============================================================
+
+-- FTS indexes
+CREATE INDEX idx_targets_tsv_name        ON ski.targets        USING gin (tsv_name);
+CREATE INDEX idx_targets_tsv_description ON ski.targets        USING gin (tsv_description);
+CREATE INDEX idx_targets_tsv_notes       ON ski.targets        USING gin (tsv_notes);
+
+CREATE INDEX idx_strikingparts_tsv_name        ON ski.strikingparts USING gin (tsv_name);
+CREATE INDEX idx_strikingparts_tsv_description ON ski.strikingparts USING gin (tsv_description);
+CREATE INDEX idx_strikingparts_tsv_notes       ON ski.strikingparts USING gin (tsv_notes);
+
+CREATE INDEX idx_technics_tsv_name        ON ski.technics USING gin (tsv_name);
+CREATE INDEX idx_technics_tsv_description ON ski.technics USING gin (tsv_description);
+CREATE INDEX idx_technics_tsv_notes       ON ski.technics USING gin (tsv_notes);
+
+CREATE INDEX idx_stands_tsv_name        ON ski.stands USING gin (tsv_name);
+CREATE INDEX idx_stands_tsv_description ON ski.stands USING gin (tsv_description);
+CREATE INDEX idx_stands_tsv_notes       ON ski.stands USING gin (tsv_notes);
+
+-- Kihon joins
+CREATE INDEX idx_kihon_inventory_grade_id ON ski.kihon_inventory(grade_id);
+CREATE INDEX idx_kihon_sequences_inventory_id ON ski.kihon_sequences(inventory_id);
+CREATE INDEX idx_kihon_sequences_stand_id ON ski.kihon_sequences(stand_id);
+CREATE INDEX idx_kihon_sequences_technic_id ON ski.kihon_sequences(technic_id);
+
+CREATE INDEX idx_kihon_tx_from_sequence ON ski.kihon_tx(from_sequence);
+CREATE INDEX idx_kihon_tx_to_sequence   ON ski.kihon_tx(to_sequence);
+
+-- Kata joins
+CREATE INDEX idx_kata_sequence_kata_id ON ski.kata_sequence(kata_id);
+CREATE INDEX idx_kata_sequence_stand_id ON ski.kata_sequence(stand_id);
+
+CREATE INDEX idx_kata_waza_sequence_id     ON ski.kata_sequence_waza(sequence_id);
+CREATE INDEX idx_kata_waza_technic_id      ON ski.kata_sequence_waza(technic_id);
+CREATE INDEX idx_kata_waza_strikingpart_id ON ski.kata_sequence_waza(strikingpart_id);
+CREATE INDEX idx_kata_waza_target_id       ON ski.kata_sequence_waza(technic_target_id);
+
+CREATE INDEX idx_kata_tx_from_sequence        ON ski.kata_tx(from_sequence);
+CREATE INDEX idx_kata_tx_to_sequence          ON ski.kata_tx(to_sequence);
+CREATE INDEX idx_kata_tx_intermediate_stand_id   ON ski.kata_tx(intermediate_stand_id);
+
+-- Lookup indexes
+CREATE INDEX idx_targets_name         ON ski.targets(name);
+CREATE INDEX idx_strikingparts_name   ON ski.strikingparts(name);
+CREATE INDEX idx_technics_name        ON ski.technics(name);
+CREATE INDEX idx_stands_name          ON ski.stands(name);
+CREATE INDEX idx_kata_inventory_name  ON ski.kata_inventory(kata);
+CREATE INDEX idx_grades_gtype         ON ski.grades(gtype);
+CREATE INDEX idx_kata_sequence_side   ON ski.kata_sequence(side);
+CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
+
+
 
 -- Valutare come modellare il bunkai, catalogo e riferimento al kata, ma valutare le info
 -- CREATE TABLE ski.bunkai_inventory(
 --     bunkai_id SMALLINT PRIMARY KEY ,
---     kata_id SMALLINT NOT NULL REFERENCES ski.Kata_inventory(id_kata) ,
+--     kata_id SMALLINT NOT NULL REFERENCES ski.kata_inventory(id_kata) ,
 -- )
 -- CREATE TABLE ski.kata_bunkai(
 --     sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
 -- );
 
--- Full-text search indexes
-CREATE INDEX idx_targets_tsv_name ON ski.targets USING gin(tsv_name);
-CREATE INDEX idx_targets_tsv_description ON ski.targets USING gin(tsv_description);
-CREATE INDEX idx_targets_tsv_notes ON ski.targets USING gin(tsv_notes);
 
-CREATE INDEX idx_strikingparts_tsv_name ON ski.strikingparts USING gin(tsv_name);
-CREATE INDEX idx_strikingparts_tsv_description ON ski.strikingparts USING gin(tsv_description);
-CREATE INDEX idx_strikingparts_tsv_notes ON ski.strikingparts USING gin(tsv_notes);
+-- =============================================================
+-- Functions 
+-- =============================================================
 
-CREATE INDEX idx_technics_tsv_name ON ski.technics USING gin(tsv_name);
-CREATE INDEX idx_technics_tsv_description ON ski.technics USING gin(tsv_description);
-CREATE INDEX idx_technics_tsv_notes ON ski.technics USING gin(tsv_notes);
-
-CREATE INDEX idx_stands_tsv_name ON ski.stands USING gin(tsv_name);
-CREATE INDEX idx_stands_tsv_description ON ski.stands USING gin(tsv_description);
-CREATE INDEX idx_stands_tsv_notes ON ski.stands USING gin(tsv_notes);
-
--- Kihon joins
-CREATE INDEX idx_kihon_inventory_grade ON ski.kihon_inventory(grade_id);
-CREATE INDEX idx_kihon_sequences_inventory ON ski.kihon_sequences(inventory_id);
-CREATE INDEX idx_kihon_sequences_stand ON ski.kihon_sequences(stand);
-CREATE INDEX idx_kihon_sequences_technic ON ski.kihon_sequences(techinc);
-
-CREATE INDEX idx_kihon_tx_fromseq ON ski.kihon_tx(from_seq);
-CREATE INDEX idx_kihon_tx_toseq ON ski.kihon_tx(to_seq);
-
--- Kata joins
-CREATE INDEX idx_kata_sequence_kata ON ski.kata_sequence(kata_id);
-CREATE INDEX idx_kata_sequence_stand ON ski.kata_sequence(stand_id);
-
-CREATE INDEX idx_kata_waza_sequence ON ski.kata_sequence_waza(sequence_id);
-CREATE INDEX idx_kata_waza_technic ON ski.kata_sequence_waza(technic_id);
-CREATE INDEX idx_kata_waza_strikingpart ON ski.kata_sequence_waza(strikingpart_id);
-CREATE INDEX idx_kata_waza_target ON ski.kata_sequence_waza(technic_target_id);
-
-CREATE INDEX idx_kata_tx_fromseq ON ski.kata_tx(from_seq);
-CREATE INDEX idx_kata_tx_toseq ON ski.kata_tx(to_seq);
-CREATE INDEX idx_kata_tx_intermediatestand ON ski.kata_tx(intermediate_stand);
-
--- lookup indexes
-CREATE INDEX idx_targets_name ON ski.targets(name);
-CREATE INDEX idx_strikingparts_name ON ski.strikingparts(name);
-CREATE INDEX idx_technics_name ON ski.technics(name);
-CREATE INDEX idx_stands_name ON ski.stands(name);
-CREATE INDEX idx_katainventory_name ON ski.kata_inventory(kata);
-
-CREATE INDEX idx_grades_gtype ON ski.grades(gtype);
-CREATE INDEX idx_kata_sequence_side ON ski.kata_sequence(side);
-CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
-
--- FUNZIONI AUSILIARIE PER RECUPERARE LE INFO
-
-CREATE OR REPLACE FUNCTION ski.get_gradeid(_grade INT,  _type VARCHAR )
-    returns SMALLINT
-    language sql
-    AS $$
-        SELECT id_grade 
-        FROM ski.grades 
-        WHERE grade = _grade
-        AND gtype = _type::ski.grade_type
-        ;
-    $$
-;
-
-
-CREATE OR REPLACE FUNCTION ski.get_kihons(
-    _grade INT,
-    _type VARCHAR
-    )
-    RETURNS TABLE(
-        id_inventory INT ,
-        grade_id INT ,
-        number INT
-    )
-    LANGUAGE SQL
-    AS $$
-        SELECT id_inventory,grade_id, number FROM ski.kihon_inventory WHERE grade_id = ski.get_gradeid(_grade,_type);
-    $$
-;
-
---SELECT * FROM ski.get_kihons(1,'dan');
-
-CREATE OR REPLACE FUNCTION ski.get_kihonid(
-    _gradeid INT,
-    _num INT
-    )
-    returns INT
-    LANGUAGE SQL
-    AS $$
-    SELECT id_inventory FROM ski.kihon_inventory WHERE grade_id = _gradeid AND number =_num;
+-- Return the id_grade for (grade, type)
+CREATE OR REPLACE FUNCTION public.get_gradeid(_grade INT, _type VARCHAR)
+RETURNS SMALLINT
+LANGUAGE sql
+AS $$
+  SELECT id_grade
+  FROM ski.grades
+  WHERE grade = _grade
+    AND gtype = _type::public.grade_type;
 $$;
---SELECT ski.get_kihonid(1,'dan',1);
 
+-- List kihon inventory rows for a given (grade, type)
+CREATE OR REPLACE FUNCTION public.get_kihons(_grade INT, _type VARCHAR)
+RETURNS TABLE(id_inventory INT, grade_id INT, number INT)
+LANGUAGE sql
+AS $$
+  SELECT id_inventory, grade_id, number
+  FROM ski.kihon_inventory
+  WHERE grade_id = public.get_gradeid(_grade, _type);
+$$;
 
-CREATE OR REPLACE FUNCTION ski.get_technic_info(
-    _technic_id INT
-    )
-    RETURNS TABLE(
-        id_technic SMALLINT,
-        waza ski.waza_type,
-        name TEXT,
-        description TEXT,
-        notes TEXT,
-        resource_url TEXT
-    )
-    LANGUAGE SQL
-    AS $$
-        SELECT id_technic ,
-            waza ,
-            name ,
-            description ,
-            notes ,
-            resource_url
-        FROM ski.technics
-        WHERE id_technic = _technic_id
-    $$
-;
--- SELECT ski.get_technic_info(12);
+-- Get kihon inventory id by (grade_id, sequence number)
+CREATE OR REPLACE FUNCTION public.get_kihonid(_gradeid INT, _num INT)
+RETURNS INT
+LANGUAGE sql
+AS $$
+  SELECT id_inventory FROM ski.kihon_inventory
+  WHERE grade_id = _gradeid AND number = _num;
+$$;
 
-CREATE OR REPLACE FUNCTION ski.get_stand_info(
-    _stand_id INT
-    )
-    RETURNS TABLE(
-        id_stand SMALLINT,
-        name TEXT,
-        description TEXT,
-        illustration_url TEXT,
-        notes TEXT
-    )
-    LANGUAGE SQL
-    AS $$
-        SELECT id_stand SMALLINT,
-            name TEXT,
-            description TEXT,
-            illustration_url TEXT,
-            notes TEXT
-        FROM ski.stands
-        WHERE id_stand = _stand_id
-    $$
-;
-
-
-CREATE OR REPLACE FUNCTION ski.get_strikingparts_info(
-    _id_part INT
-    )
-    RETURNS TABLE(
-        id_part SMALLINT,
-        name TEXT,
-        translation TEXT,
-        description TEXT,
-        notes TEXT,
-        resource_url TEXT
-    )
-    LANGUAGE SQL
-    AS $$
-        SELECT id_part,
-            name ,
-            translation ,
-            description ,
-            notes ,
-            resource_url 
-        FROM ski.strikingparts
-        WHERE id_part = _id_part
-    $$
-;
-
-CREATE OR REPLACE FUNCTION ski.get_target_info(
-    _id_target INT
-    )
-    RETURNS TABLE(
-        id_target SMALLINT,
-        name TEXT,
-        original_name TEXT,
-        description TEXT,
-        notes TEXT,
-        resource_url TEXT
-    )
-    LANGUAGE SQL
-    AS $$
-        SELECT id_target ,
-            name ,
-            original_name ,
-            description ,
-            notes ,
-            resource_url 
-        FROM ski.targets
-        WHERE id_target = _id_target
-    $$
-;
-
-
-CREATE OR REPLACE FUNCTION ski.get_katasequence(_kata_id INT)
-    RETURNS TABLE(
-        id_sequence SMALLINT ,
-        kata_id SMALLINT ,
-        seq_num SMALLINT ,
-        stand_id SMALLINT ,
-        posizione TEXT ,
-        guardia ski.sides ,
-        facing ski.absolute_directions ,
-        Tecniche JSON ,
-        embusen ski.embusen_points ,
-        kiai BOOLEAN ,
-        notes TEXT
-    )
-    language sql
-    as $$
-        SELECT seq.id_sequence 
-            , seq.kata_id 
-            , seq.seq_num 
-            , seq.stand_id
-            , MAX(stands.name) as posizione
-            , seq.side AS guardia
-            , seq.facing
-            , json_agg(
-                json_build_object(
-                    'sequence_id' , combo.sequence_id 
-                    , 'arto' , combo.arto 
-                    , 'technic_id' , combo.technic_id 
-                    , 'Tecnica' , combo.technic_name 
-                    , 'technic_target_id' , combo.technic_target_id 
-                    , 'Obiettivo' , combo.target_name 
-                    , 'waza_note' , combo.waza_note
-                )
-            ) AS Tecniche
-            , seq.embusen
-            , seq.kiai
-            , seq.notes
-        FROM ski.kata_sequence AS seq
-        JOIN (
-            SELECT combo_raw.id_kswaza,
-                combo_raw.sequence_id ,
-                combo_raw.arto,
-                combo_raw.technic_id ,
-                combo_raw.technic_target_id,
-                combo_raw.notes ,
-                tech.name AS technic_name,
-                targets.name  AS target_name,
-                combo_raw.notes AS waza_note
-            FROM ski.kata_sequence_waza AS combo_raw
-            JOIN ski.technics AS tech
-            ON combo_raw.technic_id = tech.id_technic
-            LEFT JOIN ski.targets as targets
-            ON combo_raw.technic_target_id = targets.id_target
-        ) AS combo
-        ON seq.id_sequence = combo.sequence_id
-        LEFT JOIN ski.stands as stands
-        ON seq.stand_id = stands.id_stand
-        WHERE seq.kata_id = _kata_id
-        GROUP BY seq.id_sequence
-        ORDER BY seq.seq_num
-        ;
-    $$
-;
---SELECT * FROM ski.get_katasequence(1);
-
-CREATE OR REPLACE FUNCTION ski.get_katatx(_kata_id INT)
-    RETURNS TABLE(
-        id_tx SMALLINT , 
-        from_seq SMALLINT ,
-        to_seq SMALLINT ,
-        tempo  ski.tempo ,
-        direction ski.sides,
-        notes TEXT
-    )
-    language sql
-    as $$
-        WITH relevantseq AS (SELECT id_sequence FROM ski.kata_sequence)
-        SELECT id_tx  , 
-            from_seq ,
-            to_seq ,
-            tempo ,
-            direction,
-            notes
-        FROM ski.kata_tx
-        WHERE from_seq IN (SELECT id_sequence FROM relevantseq)
-        OR to_seq IN (SELECT id_sequence FROM relevantseq)
-        ;
-    $$
-;
---SELECT * FROM ski.get_katatx(1);
-
-CREATE OR REPLACE FUNCTION ski.get_kihon_steps(
-    _grade_id INT,
-    _sequenza INT
-)
+-- Technique info
+CREATE OR REPLACE FUNCTION public.get_technic_info(_technic_id INT)
 RETURNS TABLE (
-    id_sequence SMALLINT,
-    inventory_id SMALLINT,
-    seq_num SMALLINT,
-    stand SMALLINT,
-    techinc SMALLINT,
-    gyaku BOOLEAN,
-    target_hgt ski.target_hgt,
-    notes TEXT,
-    resource_url TEXT,
-    stand_name TEXT,
-    technic_name TEXT
+  id_technic SMALLINT,
+  waza public.waza_type,
+  name TEXT,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
 )
 LANGUAGE sql
 AS $$
-    SELECT seq.id_sequence,
-           seq.inventory_id,
-           seq.seq_num,
-           seq.stand,
-           seq.techinc,
-           seq.gyaku,
-           seq.target_hgt,
-           seq.notes,
-           seq.resource_url,
-           stand.name AS stand_name,
-           technic.name AS technic_name
+  SELECT id_technic, waza, name, description, notes, resource_url
+  FROM ski.technics
+  WHERE id_technic = _technic_id;
+$$;
+
+-- Stand info
+CREATE OR REPLACE FUNCTION public.get_stand_info(_stand_id INT)
+RETURNS TABLE (
+  id_stand SMALLINT,
+  name TEXT,
+  description TEXT,
+  illustration_url TEXT,
+  notes TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT id_stand, name, description, illustration_url, notes
+  FROM ski.stands
+  WHERE id_stand = _stand_id;
+$$;
+
+-- Strikingpart info
+CREATE OR REPLACE FUNCTION public.get_strikingparts_info(_id_part INT)
+RETURNS TABLE (
+  id_part SMALLINT,
+  name TEXT,
+  translation TEXT,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT id_part, name, translation, description, notes, resource_url
+  FROM ski.strikingparts
+  WHERE id_part = _id_part;
+$$;
+
+-- Target info
+CREATE OR REPLACE FUNCTION public.get_target_info(_id_target INT)
+RETURNS TABLE (
+  id_target SMALLINT,
+  name TEXT,
+  original_name TEXT,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT id_target, name, original_name, description, notes, resource_url
+  FROM ski.targets
+  WHERE id_target = _id_target;
+$$;
+
+-- Kata sequence with aggregated waza (one row per step)
+CREATE OR REPLACE FUNCTION public.get_katasequence(_kata_id INT)
+RETURNS TABLE (
+  id_sequence SMALLINT,
+  kata_id SMALLINT,
+  seq_num SMALLINT,
+  stand_id SMALLINT,
+  posizione TEXT,
+  guardia public.sides,
+  facing public.absolute_directions,
+  Tecniche JSON,
+  embusen public.embusen_points,
+  kiai BOOLEAN,
+  notes TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT seq.id_sequence,
+         seq.kata_id,
+         seq.seq_num,
+         seq.stand_id,
+         MAX(stands.name) AS posizione,
+         seq.side AS guardia,
+         seq.facing,
+         json_agg(
+           json_build_object(
+             'sequence_id', combo.sequence_id,
+             'arto', combo.arto,
+             'technic_id', combo.technic_id,
+             'Tecnica', combo.technic_name,
+             'technic_target_id', combo.technic_target_id,
+             'Obiettivo', combo.target_name,
+             'waza_note', combo.waza_note
+           )
+         ) AS Tecniche,
+         seq.embusen,
+         seq.kiai,
+         seq.notes
+  FROM ski.kata_sequence AS seq
+  JOIN (
+    SELECT combo_raw.id_kswaza,
+           combo_raw.sequence_id,
+           combo_raw.arto,
+           combo_raw.technic_id,
+           combo_raw.technic_target_id,
+           combo_raw.notes,
+           tech.name AS technic_name,
+           targets.name AS target_name,
+           combo_raw.notes AS waza_note
+    FROM ski.kata_sequence_waza AS combo_raw
+    JOIN ski.technics AS tech
+      ON combo_raw.technic_id = tech.id_technic
+    LEFT JOIN ski.targets AS targets
+      ON combo_raw.technic_target_id = targets.id_target
+  ) AS combo
+    ON seq.id_sequence = combo.sequence_id
+  LEFT JOIN ski.stands AS stands
+    ON seq.stand_id = stands.id_stand
+  WHERE seq.kata_id = _kata_id
+  GROUP BY seq.id_sequence
+  ORDER BY seq.seq_num;
+$$;
+
+-- Kata transitions filtered by kata_id
+CREATE OR REPLACE FUNCTION public.get_katatx(_kata_id INT)
+RETURNS TABLE (
+  id_tx SMALLINT,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  tempo public.tempo,
+  direction public.sides,
+  notes TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH relevantseq AS (
+    SELECT id_sequence FROM ski.kata_sequence WHERE kata_id = _kata_id
+  )
+  SELECT id_tx,
+         from_sequence,
+         to_sequence,
+         tempo,
+         direction,
+         notes
+  FROM ski.kata_tx
+  WHERE from_sequence IN (SELECT id_sequence FROM relevantseq)
+     OR to_sequence   IN (SELECT id_sequence FROM relevantseq);
+$$;
+
+-- Kihon steps for a given (grade_id, sequence number)
+CREATE OR REPLACE FUNCTION public.get_kihon_steps(_grade_id INT, _sequenza INT)
+RETURNS TABLE (
+  id_sequence SMALLINT,
+  inventory_id SMALLINT,
+  seq_num SMALLINT,
+  stand_id SMALLINT,
+  technic_id SMALLINT,
+  gyaku BOOLEAN,
+  target_hgt public.target_hgt,
+  notes TEXT,
+  resource_url TEXT,
+  stand_name TEXT,
+  technic_name TEXT
+)
+LANGUAGE sql
+AS $$
+  SELECT seq.id_sequence,
+         seq.inventory_id,
+         seq.seq_num,
+         seq.stand_id,
+         seq.technic_id,
+         seq.gyaku,
+         seq.target_hgt,
+         seq.notes,
+         seq.resource_url,
+         stand.name AS stand_name,
+         technic.name AS technic_name
+  FROM ski.kihon_sequences AS seq
+  JOIN ski.kihon_inventory AS inv
+    ON seq.inventory_id = inv.id_inventory
+  LEFT JOIN ski.stands AS stand
+    ON seq.stand_id = stand.id_stand
+  LEFT JOIN ski.technics AS technic
+    ON seq.technic_id = technic.id_technic
+  WHERE inv.grade_id = _grade_id
+    AND inv.number   = _sequenza
+  ORDER BY seq.seq_num;
+$$;
+
+-- Kihon transitions for a given (grade_id, sequence number)
+CREATE OR REPLACE FUNCTION public.get_kihon_tx(_grade_id INT, _sequenza INT)
+RETURNS TABLE (
+  id_tx SMALLINT,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  movement public.movements,
+  tempo public.tempo,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH relevant_sequences AS (
+    SELECT seq.id_sequence
     FROM ski.kihon_sequences AS seq
     JOIN ski.kihon_inventory AS inv
-         ON seq.inventory_id = inv.id_inventory
-    LEFT JOIN ski.stands AS stand
-         ON seq.stand = stand.id_stand
-    LEFT JOIN ski.technics AS technic
-         ON seq.techinc = technic.id_technic
+      ON seq.inventory_id = inv.id_inventory
     WHERE inv.grade_id = _grade_id
-      AND inv.number = _sequenza
-    ORDER BY seq.seq_num;
+      AND inv.number   = _sequenza
+  )
+  SELECT tx.id_tx,
+         tx.from_sequence,
+         tx.to_sequence,
+         tx.movement,
+         tx.tempo,
+         tx.notes,
+         tx.resource_url
+  FROM ski.kihon_tx AS tx
+  WHERE tx.from_sequence IN (SELECT id_sequence FROM relevant_sequences)
+     OR tx.to_sequence   IN (SELECT id_sequence FROM relevant_sequences)
+  ORDER BY tx.from_sequence;
 $$;
---SELECT * FROM ski.get_kihonsequence(3, 2);
 
-CREATE OR REPLACE FUNCTION ski.get_kihon_tx(
-    _grade_id INT,
-    _sequenza INT
-)
+-- Kihon "formatted list" for a grade
+CREATE OR REPLACE FUNCTION public.kihon_frmlist(_grade_id INT)
 RETURNS TABLE (
-    id_tx SMALLINT,
-    from_seq SMALLINT,
-    to_seq SMALLINT,
-    movement ski.movements,
-    tempo ski.tempo,
-    notes TEXT,
-    resource_url TEXT
+  number SMALLINT,
+  seq_num SMALLINT,
+  movement public.movements,
+  technic_id SMALLINT,
+  gyaku BOOLEAN,
+  tecnica TEXT,
+  stand_id SMALLINT,
+  posizione TEXT,
+  target_hgt public.target_hgt,
+  notes TEXT
 )
 LANGUAGE sql
 AS $$
-    WITH relevant_sequences AS (
-        SELECT seq.id_sequence
-        FROM ski.kihon_sequences AS seq
-        JOIN ski.kihon_inventory AS inv
-             ON seq.inventory_id = inv.id_inventory
-        WHERE inv.grade_id = _grade_id
-          AND inv.number = _sequenza
-    )
-    SELECT tx.id_tx,
-           tx.from_seq,
-           tx.to_seq,
-           tx.movement,
-           tx.tempo,
-           tx.notes,
-           tx.resource_url
-    FROM ski.kihon_tx AS tx
-    WHERE tx.from_seq IN (SELECT id_sequence FROM relevant_sequences)
-       OR tx.to_seq IN (SELECT id_sequence FROM relevant_sequences)
-    ORDER BY tx.from_seq;
+  SELECT 
+    inv.number,
+    seq.seq_num,
+    tx.movement,
+    seq.technic_id,
+    seq.gyaku,
+    CASE WHEN seq.gyaku THEN CONCAT('(Gyaku) ', tech.name) ELSE tech.name END AS tecnica,
+    seq.stand_id,
+    stands.name AS posizione,
+    seq.target_hgt,
+    seq.notes
+  FROM ski.kihon_sequences AS seq
+  INNER JOIN ski.kihon_inventory AS inv
+    ON seq.inventory_id = inv.id_inventory
+  LEFT JOIN ski.kihon_tx AS tx 
+    ON seq.id_sequence = tx.to_sequence
+  LEFT JOIN ski.technics AS tech
+    ON seq.technic_id = tech.id_technic
+  LEFT JOIN ski.stands AS stands
+    ON seq.stand_id = stands.id_stand
+  WHERE inv.grade_id = _grade_id
+    AND seq.seq_num <> 0
+  ORDER BY inv.number, seq.seq_num;
 $$;
---SELECT * FROM ski.get_kihon_tx(3, 2);
 
-
-CREATE OR REPLACE FUNCTION ski.kihon_frmlist(
-    _grade_id INT
-)
-RETURNS TABLE (
-    number SMALLINT,
-    seq_num SMALLINT,
-    movement ski.movements,
-    technic_id SMALLINT,
-    gyaku BOOLEAN,
-    tecnica TEXT,
-    stand_id SMALLINT,
-    posizione TEXT,
-    target_hgt ski.target_hgt,
-    notes TEXT
-)
+-- Text search helpers (targets/technics/stands/strikingparts)
+CREATE OR REPLACE FUNCTION public.get_ts_targets(_search TEXT)
+RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
 AS $$
-    SELECT 
-        inv.number,
-        seq.seq_num,
-        tx.movement,
-        seq.techinc AS technic_id,
-        seq.gyaku,
-        CASE
-             WHEN seq.gyaku THEN CONCAT('(Gyaku) ', tech.name)
-             ELSE tech.name
-        END AS tecnica,
-        seq.stand AS stand_id,
-        stands.name AS posizione,
-        seq.target_hgt,
-        seq.notes
-    FROM ski.kihon_sequences AS seq
-    INNER JOIN ski.kihon_inventory AS inv
-        ON seq.inventory_id = inv.id_inventory
-    LEFT JOIN ski.kihon_tx AS tx 
-        ON seq.id_sequence = tx.to_seq 
-    LEFT JOIN ski.technics AS tech
-        ON seq.techinc = tech.id_technic
-    LEFT JOIN ski.stands AS stands
-        ON seq.stand = stands.id_stand
-    WHERE inv.grade_id = _grade_id
-      AND seq.seq_num != 0
-    ORDER BY inv.number, seq.seq_num;
+  WITH tsearch AS (
+    SELECT id_target AS id,
+           ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
+           ts_rank_cd(tsv_description, websearch_to_tsquery('simple', _search), 16) AS description_rank,
+           ts_rank_cd(tsv_notes,       websearch_to_tsquery('simple', _search), 16) AS notes_rank
+    FROM ski.targets
+  )
+  SELECT id, name_rank, description_rank, notes_rank
+  FROM tsearch
+  WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
+  ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
 $$;
---SELECT * FROM ski.kihon_frmlist(3);
 
-CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
-    RETURNS TABLE(
-        id SMALLINT , 
-        name_rank FLOAT,
-        description_rank FLOAT , 
-        notes_rank FLOAT
-    )
-    language sql
-    as $$
-        WITH tsearch AS (
-            SELECT id_target AS id ,
-                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
-                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
-                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
-            FROM ski.targets
-        )
-        SELECT id ,
-            name_rank ,    
-            description_rank,
-            notes_rank
-        FROM tsearch
-        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-        ;
-    $$
-;
+CREATE OR REPLACE FUNCTION public.get_ts_technics(_search TEXT)
+RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
+LANGUAGE sql
+AS $$
+  WITH tsearch AS (
+    SELECT id_technic AS id,
+           ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
+           ts_rank_cd(tsv_description, websearch_to_tsquery('simple', _search), 16) AS description_rank,
+           ts_rank_cd(tsv_notes,       websearch_to_tsquery('simple', _search), 16) AS notes_rank
+    FROM ski.technics
+  )
+  SELECT id, name_rank, description_rank, notes_rank
+  FROM tsearch
+  WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
+  ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+$$;
 
+CREATE OR REPLACE FUNCTION public.get_ts_stands(_search TEXT)
+RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
+LANGUAGE sql
+AS $$
+  WITH tsearch AS (
+    SELECT id_stand AS id,
+           ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
+           ts_rank_cd(tsv_description, websearch_to_tsquery('simple', _search), 16) AS description_rank,
+           ts_rank_cd(tsv_notes,       websearch_to_tsquery('simple', _search), 16) AS notes_rank
+    FROM ski.stands
+  )
+  SELECT id, name_rank, description_rank, notes_rank
+  FROM tsearch
+  WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
+  ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+$$;
 
-CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
-    RETURNS TABLE(
-        id SMALLINT , 
-        name_rank FLOAT,
-        description_rank FLOAT , 
-        notes_rank FLOAT
-    )
-    language sql
-    as $$
-        WITH tsearch AS (
-            SELECT id_technic AS id ,
-                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
-                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
-                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
-            FROM ski.technics
-        )
-        SELECT id ,
-            name_rank ,    
-            description_rank,
-            notes_rank
-        FROM tsearch
-        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-        ;
-    $$
-;
+CREATE OR REPLACE FUNCTION public.get_ts_strikingparts(_search TEXT)
+RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
+LANGUAGE sql
+AS $$
+  WITH tsearch AS (
+    SELECT id_part AS id,
+           ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
+           ts_rank_cd(tsv_description, websearch_to_tsquery('simple', _search), 16) AS description_rank,
+           ts_rank_cd(tsv_notes,       websearch_to_tsquery('simple', _search), 16) AS notes_rank
+    FROM ski.strikingparts
+  )
+  SELECT id, name_rank, description_rank, notes_rank
+  FROM tsearch
+  WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
+  ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
+$$;
 
-CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
-    RETURNS TABLE(
-        id SMALLINT , 
-        name_rank FLOAT,
-        description_rank FLOAT , 
-        notes_rank FLOAT
-    )
-    language sql
-    as $$
-        WITH tsearch AS (
-            SELECT id_stand AS id ,
-                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
-                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
-                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
-            FROM ski.stands
-        )
-        SELECT id ,
-            name_rank ,    
-            description_rank,
-            notes_rank
-        FROM tsearch
-        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-        ;
-    $$
-;
+-- Rank normalizer
+CREATE OR REPLACE FUNCTION public.ts_normalizer(
+  _name_rank FLOAT,
+  _description_rank FLOAT,
+  _notes_rank FLOAT,
+  _name_wht FLOAT DEFAULT 1.0,
+  _description_wht FLOAT DEFAULT 0.75,
+  _notes_wht FLOAT DEFAULT 0.25
+)
+RETURNS FLOAT
+LANGUAGE sql IMMUTABLE PARALLEL SAFE
+AS $$
+  SELECT coalesce(_name_rank, 0) * _name_wht
+       + coalesce(_description_rank, 0) * _description_wht
+       + coalesce(_notes_rank, 0) * _notes_wht;
+$$;
 
-CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
-    RETURNS TABLE(
-        id SMALLINT , 
-        name_rank FLOAT,
-        description_rank FLOAT , 
-        notes_rank FLOAT
-    )
-    language sql
-    as $$
-        WITH tsearch AS (
-            SELECT id_part AS id ,
-                ts_rank_cd(tsv_name, websearch_to_tsquery('simple',_search),16) AS name_rank ,    
-                ts_rank_cd(tsv_description, websearch_to_tsquery('simple',_search),16) AS description_rank,
-                ts_rank_cd(tsv_notes, websearch_to_tsquery('simple',_search),16) AS notes_rank
-            FROM ski.strikingparts
-        )
-        SELECT id ,
-            name_rank ,    
-            description_rank,
-            notes_rank
-        FROM tsearch
-        WHERE name_rank >0 OR description_rank >0 OR notes_rank >0
-        ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-        ;
-    $$
-;
+-- =============================================================
+-- Staging/Upsert/Reject tables
+-- =============================================================
 
-CREATE OR REPLACE FUNCTION ski.ts_normalizer(
-    _name_rank FLOAT ,
-    _description_rank FLOAT ,
-    _notes_rank FLOAT ,
-    _name_wht FLOAT DEFAULT 1.0,
-    _description_wht FLOAT DEFAULT 0.75,
-    _notes_wht FLOAT DEFAULT 0.25
-    )
-    RETURNS FLOAT
-    LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $funzione$
-        SELECT  coalesce(_name_rank, 0)*_name_wht + coalesce(_description_rank, 0)*_description_wht + coalesce(_notes_rank, 0)*_notes_wht;
-    $funzione$
-;
-
+-- ---------- Staging ----------
 CREATE TABLE staging.targets(
   id_target SMALLINT UNIQUE,
   name VARCHAR(255) NOT NULL,
@@ -806,8 +761,8 @@ CREATE TABLE staging.targets(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_targetname UNIQUE(name)
-); -- parti del corpo colpite
+  CONSTRAINT uq_staging_targets_name UNIQUE(name)
+);
 
 CREATE TABLE staging.strikingparts( 
   id_part SMALLINT UNIQUE,
@@ -819,114 +774,112 @@ CREATE TABLE staging.strikingparts(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_strikingpartsname UNIQUE(name)
-); -- parti del corpo che colpiscono
+  CONSTRAINT uq_staging_strikingparts_name UNIQUE(name)
+);
 
 CREATE TABLE staging.technics(
   id_technic SMALLINT UNIQUE,
-  waza ski.waza_type,
+  waza public.waza_type,
   name VARCHAR(255) NOT NULL,
-  -- aka VARCHAR(255) ,
   description TEXT,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_technicname UNIQUE(name)
-); --Inventario delle tecniche
+  CONSTRAINT uq_staging_technics_name UNIQUE(name)
+);
 
 CREATE TABLE staging.stands(
   id_stand SMALLINT UNIQUE,
   name VARCHAR(255) NOT NULL,
-  -- aka VARCHAR(255) , -- altoro nome con la quale è conosciuta
   description TEXT,
   illustration_url TEXT,
   notes TEXT,
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_standname UNIQUE(name)
-); --Inventario delle posizioni
+  CONSTRAINT uq_staging_stands_name UNIQUE(name)
+);
 
 CREATE TABLE staging.grades(
   id_grade SMALLINT UNIQUE,
-  gtype ski.grade_type NOT NULL,
+  gtype public.grade_type NOT NULL,
   grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL ,
-  color ski.beltcolor,
+  color public.beltcolor,
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_grade UNIQUE (gtype, grade)
-); -- forma normale della sequenza di gradi Kiu e Dan
+  CONSTRAINT uq_staging_grades UNIQUE (gtype, grade)
+);
 
 CREATE TABLE staging.kihon_inventory(
-  id_inventory SMALLINT ,
-  grade_id SMALLINT NOT NULL, -- REFERENCES ski.grades(id_grade) 
+  id_inventory SMALLINT,
+  grade_id SMALLINT NOT NULL,
   number SMALLINT NOT NULL,
   notes TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
-  staging_update BOOL ,
-  CONSTRAINT unique_kihoninventory UNIQUE (grade_id, number)
+  staging_update BOOL,
+  CONSTRAINT uq_staging_kihon_inventory UNIQUE (grade_id, number)
 );
 
 CREATE TABLE staging.kihon_sequences(
-  id_sequence SMALLINT UNIQUE ,
-  inventory_id SMALLINT NOT NULL, -- REFERENCES ski.kihon_inventory(id_inventory)
-  seq_num SMALLINT NOT NULL, 
-  stand SMALLINT NOT NULL , -- REFERENCES ski.stands(id_stand)
-  techinc SMALLINT NOT NULL , -- REFERENCES ski.technics(id_technic)
-  gyaku bool DEFAULT 'false',
-  target_hgt ski.target_hgt ,
-  notes TEXT ,
+  id_sequence SMALLINT UNIQUE,
+  inventory_id SMALLINT NOT NULL,
+  seq_num SMALLINT NOT NULL,
+  stand_id SMALLINT NOT NULL,
+  technic_id SMALLINT NOT NULL,
+  gyaku bool DEFAULT false,
+  target_hgt public.target_hgt,
+  notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_kihonsequence UNIQUE (inventory_id, seq_num)
+  CONSTRAINT uq_staging_kihon_sequences UNIQUE (inventory_id, seq_num)
 );
 
 CREATE TABLE staging.kihon_tx(
-  id_tx SMALLINT UNIQUE ,
-  from_seq SMALLINT NOT NULL , -- REFERENCES ski.kihon_sequences(id_sequence)
-  to_seq SMALLINT NOT NULL , -- REFERENCES ski.kihon_sequences(id_sequence)
-  movement ski.movements ,
+  id_tx SMALLINT UNIQUE,
+  from_sequence SMALLINT NOT NULL,
+  to_sequence SMALLINT NOT NULL,
+  movement public.movements,
   notes TEXT,
-  tempo ski.tempo ,
+  tempo public.tempo,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_kihontx UNIQUE (from_seq, to_seq)
-); 
+  CONSTRAINT uq_staging_kihon_tx UNIQUE (from_sequence, to_sequence)
+);
 
-CREATE TABLE staging.Kata_inventory(
+CREATE TABLE staging.kata_inventory(
   id_kata SMALLINT UNIQUE,
   kata VARCHAR(255) NOT NULL,
-  serie ski.kata_series,
-  starting_leg ski.sides NOT NULL,
+  serie public.kata_series,
+  starting_leg public.sides NOT NULL,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_kata UNIQUE (kata)
+  CONSTRAINT uq_staging_kata UNIQUE (kata)
 );
 
 CREATE TABLE staging.kata_sequence(
-  id_sequence SMALLINT UNIQUE ,
-  kata_id SMALLINT NOT NULL , -- REFERENCES ski.Kata_inventory(id_kata)
+  id_sequence SMALLINT UNIQUE,
+  kata_id SMALLINT NOT NULL,
   seq_num SMALLINT NOT NULL,
-  stand_id SMALLINT NOT NULL , -- REFERENCES ski.stands(id_stand)
-  speed ski.tempo ,
-  side ski.sides, 
-  embusen ski.embusen_points ,
-  facing ski.absolute_directions, 
+  stand_id SMALLINT NOT NULL,
+  speed public.tempo,
+  side public.sides,
+  embusen public.embusen_points,
+  facing public.absolute_directions,
   kiai bool,
   notes TEXT,
   resource_url TEXT,
@@ -934,16 +887,16 @@ CREATE TABLE staging.kata_sequence(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT unique_kata_seq UNIQUE (kata_id, seq_num)
-); 
+  CONSTRAINT uq_staging_kata_seq UNIQUE (kata_id, seq_num)
+);
 
 CREATE TABLE staging.kata_sequence_waza (
-  id_kswaza SMALLINT UNIQUE ,
-  sequence_id SMALLINT , --REFERENCES ski.kata_sequence(id_sequence)
-  arto ski.arti,
-  technic_id SMALLINT NOT NULL , -- REFERENCES ski.technics(id_technic)
-  strikingpart_id SMALLINT , -- REFERENCES ski.strikingparts(id_part)
-  technic_target_id SMALLINT , -- REFERENCES ski.targets(id_target)
+  id_kswaza SMALLINT UNIQUE,
+  sequence_id SMALLINT,
+  arto public.arti,
+  technic_id SMALLINT NOT NULL,
+  strikingpart_id SMALLINT,
+  technic_target_id SMALLINT,
   notes TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -952,12 +905,12 @@ CREATE TABLE staging.kata_sequence_waza (
 );
 
 CREATE TABLE staging.kata_tx (
-  id_tx SMALLINT UNIQUE ,
-  from_seq SMALLINT NOT NULL ,
-  to_seq SMALLINT NOT NULL ,
-  tempo ski.tempo ,
-  direction ski.sides ,
-  intermediate_stand SMALLINT , -- 
+  id_tx SMALLINT UNIQUE,
+  from_sequence SMALLINT NOT NULL,
+  to_sequence SMALLINT NOT NULL,
+  tempo public.tempo,
+  direction public.sides,
+  intermediate_stand_id SMALLINT,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -966,84 +919,11 @@ CREATE TABLE staging.kata_tx (
   staging_update BOOL
 );
 
-
-CREATE VIEW staging.dom_targets AS
-  SELECT id_target FROM ski.targets
-  UNION
-  SELECT id_target FROM staging.targets
-;
-
-CREATE VIEW staging.dom_strikingparts AS
-  SELECT id_part FROM ski.strikingparts
-  UNION
-  SELECT id_part FROM staging.strikingparts
-;
-
-CREATE VIEW staging.dom_technics AS
-  SELECT id_technic FROM ski.technics
-  UNION
-  SELECT id_technic FROM staging.technics
-;
-
-CREATE VIEW staging.dom_stands AS
-  SELECT id_stand FROM ski.stands
-  UNION
-  SELECT id_stand FROM staging.stands
-;
-
-CREATE VIEW staging.dom_grades AS
-  SELECT id_grade FROM ski.grades
-  UNION
-  SELECT id_grade FROM staging.grades
-;
-
-CREATE VIEW staging.dom_kihon_inventory AS
-  SELECT id_inventory FROM ski.kihon_inventory
-  UNION
-  SELECT id_inventory FROM staging.kihon_inventory
-;
-
-CREATE VIEW staging.dom_kihon_sequences AS
-  SELECT id_sequence FROM ski.kihon_sequences
-  UNION
-  SELECT id_sequence FROM staging.kihon_sequences
-;
-
-CREATE VIEW staging.dom_kihon_tx AS
-  SELECT id_tx FROM ski.kihon_tx
-  UNION
-  SELECT id_tx FROM staging.kihon_tx
-;
-
-CREATE VIEW staging.dom_kata_inventory AS
-  SELECT id_kata FROM ski.Kata_inventory
-  UNION
-  SELECT id_kata FROM staging.Kata_inventory
-;
-
-CREATE VIEW staging.dom_kata_sequence AS
-  SELECT id_sequence FROM ski.kata_sequence
-  UNION
-  SELECT id_sequence FROM staging.kata_sequence
-;
-
-CREATE VIEW staging.dom_kata_sequence_waza AS
-  SELECT id_kswaza FROM ski.kata_sequence_waza
-  UNION
-  SELECT id_kswaza FROM staging.kata_sequence_waza
-;
-
-CREATE VIEW staging.dom_kata_tx AS
-  SELECT id_tx FROM ski.kata_tx
-  UNION
-  SELECT id_tx FROM staging.kata_tx
-;
-
--- upsert tables
+-- ---------- Upsert ----------
 CREATE TABLE upsert.technics(
-  id_technic SMALLINT ,
-  waza ski.waza_type,
-  name VARCHAR(255) ,
+  id_technic SMALLINT,
+  waza public.waza_type,
+  name VARCHAR(255),
   description TEXT,
   notes TEXT,
   resource_url TEXT,
@@ -1091,9 +971,9 @@ CREATE TABLE upsert.stands(
 
 CREATE TABLE upsert.grades(
   id_grade SMALLINT,
-  gtype ski.grade_type,
+  gtype public.grade_type,
   grade SMALLINT,
-  color ski.beltcolor,
+  color public.beltcolor,
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
@@ -1116,10 +996,10 @@ CREATE TABLE upsert.kihon_sequences(
   id_sequence SMALLINT,
   inventory_id SMALLINT,
   seq_num SMALLINT,
-  stand SMALLINT,
-  techinc SMALLINT,
+  stand_id SMALLINT,
+  technic_id SMALLINT,
   gyaku bool,
-  target_hgt ski.target_hgt,
+  target_hgt public.target_hgt,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1131,11 +1011,11 @@ CREATE TABLE upsert.kihon_sequences(
 
 CREATE TABLE upsert.kihon_tx(
   id_tx SMALLINT,
-  from_seq SMALLINT,
-  to_seq SMALLINT,
-  movement ski.movements,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  movement public.movements,
   notes TEXT,
-  tempo ski.tempo,
+  tempo public.tempo,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1144,11 +1024,11 @@ CREATE TABLE upsert.kihon_tx(
   insertion TIMESTAMP
 );
 
-CREATE TABLE upsert.Kata_inventory(
+CREATE TABLE upsert.kata_inventory(
   id_kata SMALLINT,
   kata VARCHAR(255),
-  serie ski.kata_series,
-  starting_leg ski.sides,
+  serie public.kata_series,
+  starting_leg public.sides,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1163,10 +1043,10 @@ CREATE TABLE upsert.kata_sequence(
   kata_id SMALLINT,
   seq_num SMALLINT,
   stand_id SMALLINT,
-  speed ski.tempo,
-  side ski.sides,
-  embusen ski.embusen_points,
-  facing ski.absolute_directions,
+  speed public.tempo,
+  side public.sides,
+  embusen public.embusen_points,
+  facing public.absolute_directions,
   kiai bool,
   notes TEXT,
   resource_url TEXT,
@@ -1180,7 +1060,7 @@ CREATE TABLE upsert.kata_sequence(
 CREATE TABLE upsert.kata_sequence_waza(
   id_kswaza SMALLINT,
   sequence_id SMALLINT,
-  arto ski.arti,
+  arto public.arti,
   technic_id SMALLINT,
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
@@ -1194,11 +1074,11 @@ CREATE TABLE upsert.kata_sequence_waza(
 
 CREATE TABLE upsert.kata_tx(
   id_tx SMALLINT,
-  from_seq SMALLINT,
-  to_seq SMALLINT,
-  tempo ski.tempo,
-  direction ski.sides,
-  intermediate_stand SMALLINT,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  tempo public.tempo,
+  direction public.sides,
+  intermediate_stand_id SMALLINT,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1208,11 +1088,11 @@ CREATE TABLE upsert.kata_tx(
   insertion TIMESTAMP
 );
 
--- rejected tables
+-- ---------- Reject ----------
 CREATE TABLE reject.technics(
-  id_technic SMALLINT ,
-  waza ski.waza_type,
-  name VARCHAR(255) ,
+  id_technic SMALLINT,
+  waza public.waza_type,
+  name VARCHAR(255),
   description TEXT,
   notes TEXT,
   resource_url TEXT,
@@ -1260,9 +1140,9 @@ CREATE TABLE reject.stands(
 
 CREATE TABLE reject.grades(
   id_grade SMALLINT,
-  gtype ski.grade_type,
+  gtype public.grade_type,
   grade SMALLINT,
-  color ski.beltcolor,
+  color public.beltcolor,
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
@@ -1285,10 +1165,10 @@ CREATE TABLE reject.kihon_sequences(
   id_sequence SMALLINT,
   inventory_id SMALLINT,
   seq_num SMALLINT,
-  stand SMALLINT,
-  techinc SMALLINT,
+  stand_id SMALLINT,
+  technic_id SMALLINT,
   gyaku bool,
-  target_hgt ski.target_hgt,
+  target_hgt public.target_hgt,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1300,11 +1180,11 @@ CREATE TABLE reject.kihon_sequences(
 
 CREATE TABLE reject.kihon_tx(
   id_tx SMALLINT,
-  from_seq SMALLINT,
-  to_seq SMALLINT,
-  movement ski.movements,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  movement public.movements,
   notes TEXT,
-  tempo ski.tempo,
+  tempo public.tempo,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1313,11 +1193,11 @@ CREATE TABLE reject.kihon_tx(
   insertion TIMESTAMP
 );
 
-CREATE TABLE reject.Kata_inventory(
+CREATE TABLE reject.kata_inventory(
   id_kata SMALLINT,
   kata VARCHAR(255),
-  serie ski.kata_series,
-  starting_leg ski.sides,
+  serie public.kata_series,
+  starting_leg public.sides,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1332,10 +1212,10 @@ CREATE TABLE reject.kata_sequence(
   kata_id SMALLINT,
   seq_num SMALLINT,
   stand_id SMALLINT,
-  speed ski.tempo,
-  side ski.sides,
-  embusen ski.embusen_points,
-  facing ski.absolute_directions,
+  speed public.tempo,
+  side public.sides,
+  embusen public.embusen_points,
+  facing public.absolute_directions,
   kiai bool,
   notes TEXT,
   resource_url TEXT,
@@ -1349,7 +1229,7 @@ CREATE TABLE reject.kata_sequence(
 CREATE TABLE reject.kata_sequence_waza(
   id_kswaza SMALLINT,
   sequence_id SMALLINT,
-  arto ski.arti,
+  arto public.arti,
   technic_id SMALLINT,
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
@@ -1363,11 +1243,11 @@ CREATE TABLE reject.kata_sequence_waza(
 
 CREATE TABLE reject.kata_tx(
   id_tx SMALLINT,
-  from_seq SMALLINT,
-  to_seq SMALLINT,
-  tempo ski.tempo,
-  direction ski.sides,
-  intermediate_stand SMALLINT,
+  from_sequence SMALLINT,
+  to_sequence SMALLINT,
+  tempo public.tempo,
+  direction public.sides,
+  intermediate_stand_id SMALLINT,
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
@@ -1376,6 +1256,68 @@ CREATE TABLE reject.kata_tx(
   staging_update BOOL,
   insertion TIMESTAMP
 );
+-- =============================================================
+-- Views (staging domain unions so keys are visible for ETL)
+-- =============================================================
+CREATE VIEW staging.dom_targets AS
+  SELECT id_target FROM ski.targets
+  UNION
+  SELECT id_target FROM staging.targets;
+
+CREATE VIEW staging.dom_strikingparts AS
+  SELECT id_part FROM ski.strikingparts
+  UNION
+  SELECT id_part FROM staging.strikingparts;
+
+CREATE VIEW staging.dom_technics AS
+  SELECT id_technic FROM ski.technics
+  UNION
+  SELECT id_technic FROM staging.technics;
+
+CREATE VIEW staging.dom_stands AS
+  SELECT id_stand FROM ski.stands
+  UNION
+  SELECT id_stand FROM staging.stands;
+
+CREATE VIEW staging.dom_grades AS
+  SELECT id_grade FROM ski.grades
+  UNION
+  SELECT id_grade FROM staging.grades;
+
+CREATE VIEW staging.dom_kihon_inventory AS
+  SELECT id_inventory FROM ski.kihon_inventory
+  UNION
+  SELECT id_inventory FROM staging.kihon_inventory;
+
+CREATE VIEW staging.dom_kihon_sequences AS
+  SELECT id_sequence FROM ski.kihon_sequences
+  UNION
+  SELECT id_sequence FROM staging.kihon_sequences;
+
+CREATE VIEW staging.dom_kihon_tx AS
+  SELECT id_tx FROM ski.kihon_tx
+  UNION
+  SELECT id_tx FROM staging.kihon_tx;
+
+CREATE VIEW staging.dom_kata_inventory AS
+  SELECT id_kata FROM ski.kata_inventory
+  UNION
+  SELECT id_kata FROM staging.kata_inventory;
+
+CREATE VIEW staging.dom_kata_sequence AS
+  SELECT id_sequence FROM ski.kata_sequence
+  UNION
+  SELECT id_sequence FROM staging.kata_sequence;
+
+CREATE VIEW staging.dom_kata_sequence_waza AS
+  SELECT id_kswaza FROM ski.kata_sequence_waza
+  UNION
+  SELECT id_kswaza FROM staging.kata_sequence_waza;
+
+CREATE VIEW staging.dom_kata_tx AS
+  SELECT id_tx FROM ski.kata_tx
+  UNION
+  SELECT id_tx FROM staging.kata_tx;
 
 --
 CREATE OR REPLACE FUNCTION staging.trigfunc_ins_technics()
@@ -1851,7 +1793,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_inventory()
   seq_adj integer;
   tms_op timestamp;
   BEGIN
-  SELECT INTO seq_adj setval('ski.seq_kihon_id_inventory ', MAX(id_inventory), true) FROM staging.dom_kihon_inventory;
+  SELECT INTO seq_adj setval('ski.seq_kihon_id_inventory', MAX(id_inventory), true) FROM staging.dom_kihon_inventory;
   SELECT INTO tms_op CURRENT_TIMESTAMP;
     UPDATE staging.kihon_inventory SET staging_autoid = false WHERE staging_autoid IS NULL;
     WITH
@@ -1942,7 +1884,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
     UPDATE staging.kihon_sequences SET staging_autoid = false WHERE staging_autoid IS NULL;
     WITH
     dupkey AS (
-    SELECT l.id_sequence, l.inventory_id, l.seq_num, l.stand, l.techinc, l.gyaku, l.target_hgt, l.notes
+    SELECT l.id_sequence, l.inventory_id, l.seq_num, l.stand_id, l.technic_id, l.gyaku, l.target_hgt, l.notes
     FROM staging.kihon_sequences l
     INNER JOIN ski.kihon_sequences r ON l.id_sequence = r.id_sequence
     ),
@@ -1950,8 +1892,8 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
       UPDATE ski.kihon_sequences t
       SET inventory_id = dupkey.inventory_id,
         seq_num = dupkey.seq_num,
-        stand = dupkey.stand,
-        techinc = dupkey.techinc,
+        stand_id = dupkey.stand_id,
+        technic_id = dupkey.technic_id,
         gyaku = dupkey.gyaku,
         target_hgt = dupkey.target_hgt,
         notes = dupkey.notes
@@ -1961,11 +1903,11 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
     ),
     tbl_update AS (
       INSERT INTO ski.kihon_sequences(
-        id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes
+        id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes
       )
-      SELECT id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes
+      SELECT id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes
       FROM (
-        SELECT tot.id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes
+        SELECT tot.id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes
         FROM staging.kihon_sequences tot
         LEFT JOIN tbl_pk_update esc ON tot.id_sequence = esc.id_sequence
         WHERE esc.id_sequence IS NULL
@@ -1975,8 +1917,8 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
         id_sequence = EXCLUDED.id_sequence,
         inventory_id = EXCLUDED.inventory_id,
         seq_num = EXCLUDED.seq_num,
-        stand = EXCLUDED.stand,
-        techinc = EXCLUDED.techinc,
+        stand_id = EXCLUDED.stand_id,
+        technic_id = EXCLUDED.technic_id,
         gyaku = EXCLUDED.gyaku,
         target_hgt = EXCLUDED.target_hgt,
         notes = EXCLUDED.notes
@@ -1997,19 +1939,19 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
     WHERE t.id_sequence = d.id_sequence;
 
     INSERT INTO upsert.kihon_sequences (
-      id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes,
+      id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes,
+    SELECT id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kihon_sequences
     WHERE staging_pk_update = true OR staging_update = true;
 
     INSERT INTO reject.kihon_sequences (
-      id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes,
+      id_sequence, inventory_id, seq_num, stand, technic, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_sequence, inventory_id, seq_num, stand, techinc, gyaku, target_hgt, notes,
+    SELECT id_sequence, inventory_id, seq_num, stand, technic, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kihon_sequences
     WHERE NOT (staging_pk_update = true OR staging_update = true);
@@ -2036,14 +1978,14 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_tx()
     UPDATE staging.kihon_tx SET staging_autoid = false WHERE staging_autoid IS NULL;
     WITH
     dupkey AS (
-    SELECT l.id_tx, l.from_seq, l.to_seq, l.movement, l.notes, l.tempo
+    SELECT l.id_tx, l.from_sequence, l.to_sequence, l.movement, l.notes, l.tempo
     FROM staging.kihon_tx l
     INNER JOIN ski.kihon_tx r ON l.id_tx = r.id_tx
     ),
     tbl_pk_update AS (
       UPDATE ski.kihon_tx t
-      SET from_seq = dupkey.from_seq,
-        to_seq = dupkey.to_seq,
+      SET from_sequence = dupkey.from_sequence,
+        to_sequence = dupkey.to_sequence,
         movement = dupkey.movement,
         notes = dupkey.notes,
         tempo = dupkey.tempo
@@ -2123,15 +2065,15 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_inventory()
   BEGIN
   SELECT INTO seq_adj setval('ski.seq_kata_id_kata', MAX(id_kata), true) FROM staging.dom_kata_inventory;
   SELECT INTO tms_op CURRENT_TIMESTAMP;
-    UPDATE staging.Kata_inventory SET staging_autoid = false WHERE staging_autoid IS NULL;
+    UPDATE staging.kata_inventory SET staging_autoid = false WHERE staging_autoid IS NULL;
     WITH
     dupkey AS (
     SELECT l.id_kata, l.kata, l.serie, l.starting_leg, l.notes
-    FROM staging.Kata_inventory l
-    INNER JOIN ski.Kata_inventory r ON l.id_kata = r.id_kata
+    FROM staging.kata_inventory l
+    INNER JOIN ski.kata_inventory r ON l.id_kata = r.id_kata
     ),
     tbl_pk_update AS (
-      UPDATE ski.Kata_inventory t
+      UPDATE ski.kata_inventory t
       SET kata = dupkey.kata,
         serie = dupkey.serie,
         starting_leg = dupkey.starting_leg,
@@ -2141,13 +2083,13 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_inventory()
       RETURNING t.id_kata
     ),
     tbl_update AS (
-      INSERT INTO ski.Kata_inventory(
+      INSERT INTO ski.kata_inventory(
         id_kata, kata, serie, starting_leg, notes
       )
       SELECT id_kata, kata, serie, starting_leg, notes
       FROM (
         SELECT tot.id_kata, kata, serie, starting_leg, notes
-        FROM staging.Kata_inventory tot
+        FROM staging.kata_inventory tot
         LEFT JOIN tbl_pk_update esc ON tot.id_kata = esc.id_kata
         WHERE esc.id_kata IS NULL
       )
@@ -2164,35 +2106,35 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_inventory()
       SELECT base.id_kata,
         pk.id_kata IS NOT NULL AS staging_pk_update,
         upd.id_kata IS NOT NULL AS staging_update
-      FROM staging.Kata_inventory AS base
+      FROM staging.kata_inventory AS base
       LEFT JOIN tbl_pk_update AS pk ON base.id_kata = pk.id_kata
       LEFT JOIN tbl_update AS upd ON base.id_kata = upd.id_kata
     )
-    UPDATE staging.Kata_inventory t
+    UPDATE staging.kata_inventory t
     SET staging_pk_update = d.staging_pk_update,
       staging_update = d.staging_update
     FROM details d
     WHERE t.id_kata = d.id_kata;
 
-    INSERT INTO upsert.Kata_inventory (
+    INSERT INTO upsert.kata_inventory (
       id_kata, kata, serie, starting_leg, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
     SELECT id_kata, kata, serie, starting_leg, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
-    FROM staging.Kata_inventory
+    FROM staging.kata_inventory
     WHERE staging_pk_update = true OR staging_update = true;
 
-    INSERT INTO reject.Kata_inventory (
+    INSERT INTO reject.kata_inventory (
       id_kata, kata, serie, starting_leg, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
     SELECT id_kata, kata, serie, starting_leg, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
-    FROM staging.Kata_inventory
+    FROM staging.kata_inventory
     WHERE NOT (staging_pk_update = true OR staging_update = true);
 
-    DELETE FROM staging.Kata_inventory;
+    DELETE FROM staging.kata_inventory;
 
     RETURN NULL;
   END;
@@ -2560,7 +2502,7 @@ CREATE TRIGGER trigger_kihon_tx
 
 CREATE TRIGGER trigger_kata_inventory
   AFTER INSERT
-  ON staging.Kata_inventory
+  ON staging.kata_inventory
   FOR EACH STATEMENT
   EXECUTE FUNCTION staging.trigfunc_ins_kata_inventory()
 ;
@@ -2654,7 +2596,7 @@ CREATE TABLE bkp.strikingparts(
 CREATE TABLE bkp.technics(
     bkp TIMESTAMP ,
     id_technic SMALLINT,
-    waza ski.waza_type,
+    waza waza_type,
     name VARCHAR(255) ,
     -- aka VARCHAR(255) ,
     description TEXT,
@@ -2676,9 +2618,9 @@ CREATE TABLE bkp.stands(
 CREATE TABLE bkp.grades(
     bkp TIMESTAMP ,
     id_grade SMALLINT ,
-    gtype ski.grade_type ,
+    gtype grade_type ,
     grade SMALLINT ,
-    color ski.beltcolor
+    color beltcolor
 )
 ; 
 
@@ -2696,10 +2638,10 @@ CREATE TABLE bkp.kihon_sequences(
     id_sequence SMALLINT ,
     inventory_id SMALLINT ,
     seq_num SMALLINT , -- Posizione ordinale nella sequenza
-    stand SMALLINT ,
-    techinc SMALLINT ,
+    stand_id SMALLINT ,
+    technic_id SMALLINT ,
     gyaku bool,
-    target_hgt ski.target_hgt ,
+    target_hgt target_hgt ,
     notes TEXT ,
     resource_url TEXT
 )
@@ -2710,19 +2652,19 @@ CREATE TABLE bkp.kihon_tx(
     id_tx SMALLINT,
     from_seq SMALLINT, 
     to_seq SMALLINT,
-    movement ski.movements ,
+    movement movements ,
     notes TEXT,
-    tempo ski.tempo ,
+    tempo tempo ,
     resource_url TEXT
 )
 ; 
 
-CREATE TABLE bkp.Kata_inventory(
+CREATE TABLE bkp.kata_inventory(
     bkp TIMESTAMP ,
     id_kata SMALLINT,
     kata VARCHAR(255) ,
-    serie ski.kata_series,
-    starting_leg ski.sides ,
+    serie kata_series,
+    starting_leg sides ,
     notes TEXT,
     resource_url TEXT
 )
@@ -2734,10 +2676,10 @@ CREATE TABLE bkp.kata_sequence(
     kata_id SMALLINT ,
     seq_num SMALLINT ,
     stand_id SMALLINT ,
-    speed ski.tempo ,
-    side ski.sides, -- lato della guardia
-    embusen ski.embusen_points ,
-    facing ski.absolute_directions, -- direzioni cardinali rispetto all' inizio
+    speed tempo ,
+    side sides, -- lato della guardia
+    embusen embusen_points ,
+    facing absolute_directions, -- direzioni cardinali rispetto all' inizio
     kiai bool,
     notes TEXT,
     resource_url TEXT
@@ -2748,7 +2690,7 @@ CREATE TABLE bkp.kata_sequence_waza (
     bkp TIMESTAMP ,
     id_kswaza SMALLINT ,
     sequence_id SMALLINT ,
-    arto ski.arti,
+    arto arti,
     technic_id SMALLINT ,
     strikingpart_id SMALLINT ,
     technic_target_id SMALLINT ,
@@ -2761,8 +2703,8 @@ CREATE TABLE bkp.kata_tx (
     id_tx SMALLINT ,
     from_seq SMALLINT ,
     to_seq SMALLINT ,
-    tempo ski.tempo ,
-    direction ski.sides ,
+    tempo tempo ,
+    direction sides ,
     intermediate_stand SMALLINT ,
     notes TEXT,
     resource_url TEXT 
@@ -2879,8 +2821,8 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
         id_sequence  ,
         inventory_id  ,
         seq_num  ,
-        stand  ,
-        techinc  ,
+        stand_id  ,
+        technic_id  ,
         gyaku ,
         target_hgt ,
         notes  ,
@@ -2889,8 +2831,8 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
         id_sequence  ,
         inventory_id  ,
         seq_num  ,
-        stand  ,
-        techinc  ,
+        stand_id  ,
+        technic_id  ,
         gyaku ,
         target_hgt ,
         notes  ,
@@ -2918,7 +2860,7 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
     FROM ski.kihon_tx
     ; --Passaggio da una tecnica all' altra 
 
-    INSERT INTO bkp.Kata_inventory (
+    INSERT INTO bkp.kata_inventory (
         bkp  ,
         id_kata ,
         kata  ,
@@ -2933,7 +2875,7 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
         starting_leg ,
         notes ,
         resource_url 
-    FROM ski.Kata_inventory
+    FROM ski.kata_inventory
     ; -- Inventario in forma normale dei kata
 
     INSERT INTO bkp.kata_sequence (
