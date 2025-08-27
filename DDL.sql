@@ -103,7 +103,7 @@ CREATE TABLE ski.targets (
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_targets_name UNIQUE (name)
+  CONSTRAINT unique_targets_name UNIQUE (name)
 );
 
 -- -------------------------------------------------------------
@@ -120,7 +120,7 @@ CREATE TABLE ski.strikingparts (
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name) || to_tsvector('simple', translation)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_strikingparts_name UNIQUE (name)
+  CONSTRAINT unique_strikingparts_name UNIQUE (name)
 );
 
 -- -------------------------------------------------------------
@@ -137,7 +137,7 @@ CREATE TABLE ski.technics (
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_technics_name UNIQUE (name)
+  CONSTRAINT unique_technics_name UNIQUE (name)
 );
 
 -- -------------------------------------------------------------
@@ -153,7 +153,7 @@ CREATE TABLE ski.stands (
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_stands_name UNIQUE (name)
+  CONSTRAINT unique_stands_name UNIQUE (name)
 );
 
 -- -------------------------------------------------------------
@@ -165,7 +165,7 @@ CREATE TABLE ski.grades (
   gtype public.grade_type NOT NULL,
   grade SMALLINT CHECK (grade BETWEEN 1 AND 10) NOT NULL,
   color public.beltcolor,
-  CONSTRAINT uq_grades_gtype_grade UNIQUE (gtype, grade)
+  CONSTRAINT unique_grades_gtype_grade UNIQUE (gtype, grade)
 );
 
 
@@ -183,7 +183,7 @@ CREATE TABLE ski.kihon_inventory (
   number   SMALLINT NOT NULL,
   notes    TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_kihon_inventory UNIQUE (grade_id, number)
+  CONSTRAINT unique_kihon_inventory UNIQUE (grade_id, number)
 );
 
 -- -------------------------------------------------------------
@@ -201,7 +201,7 @@ CREATE TABLE ski.kihon_sequences (
   notes        TEXT,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_kihon_sequences UNIQUE (inventory_id, seq_num)
+  CONSTRAINT unique_kihon_sequences UNIQUE (inventory_id, seq_num)
 );
 
 -- -------------------------------------------------------------
@@ -217,7 +217,7 @@ CREATE TABLE ski.kihon_tx (
   tempo      public.tempo,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_kihon_tx UNIQUE (from_sequence, to_sequence)
+  CONSTRAINT unique_kihon_tx UNIQUE (from_sequence, to_sequence)
 );
 
 -- =============================================================
@@ -235,7 +235,7 @@ CREATE TABLE ski.kata_inventory (
   starting_leg public.sides NOT NULL,
   notes        TEXT,
   resource_url TEXT,
-  CONSTRAINT uq_kata_inventory_kata UNIQUE (kata)
+  CONSTRAINT unique_kata_inventory_kata UNIQUE (kata)
 );
 
 -- -------------------------------------------------------------
@@ -255,7 +255,7 @@ CREATE TABLE ski.kata_sequence (
   notes     TEXT,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_kata_sequence UNIQUE (kata_id, seq_num)
+  CONSTRAINT unique_kata_sequence UNIQUE (kata_id, seq_num)
 );
 
 -- -------------------------------------------------------------
@@ -287,7 +287,7 @@ CREATE TABLE ski.kata_tx (
   notes TEXT,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT uq_kata_tx UNIQUE (from_sequence, to_sequence)
+  CONSTRAINT unique_kata_tx UNIQUE (from_sequence, to_sequence)
 );
 
 -- =============================================================
@@ -761,7 +761,7 @@ CREATE TABLE staging.targets(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_targets_name UNIQUE(name)
+  CONSTRAINT unique_staging_targets_name UNIQUE(name)
 );
 
 CREATE TABLE staging.strikingparts( 
@@ -774,7 +774,7 @@ CREATE TABLE staging.strikingparts(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_strikingparts_name UNIQUE(name)
+  CONSTRAINT unique_staging_strikingparts_name UNIQUE(name)
 );
 
 CREATE TABLE staging.technics(
@@ -787,7 +787,7 @@ CREATE TABLE staging.technics(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_technics_name UNIQUE(name)
+  CONSTRAINT unique_staging_technics_name UNIQUE(name)
 );
 
 CREATE TABLE staging.stands(
@@ -799,7 +799,7 @@ CREATE TABLE staging.stands(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_stands_name UNIQUE(name)
+  CONSTRAINT unique_staging_stands_name UNIQUE(name)
 );
 
 CREATE TABLE staging.grades(
@@ -810,7 +810,7 @@ CREATE TABLE staging.grades(
   staging_autoid BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_grades UNIQUE (gtype, grade)
+  CONSTRAINT unique_staging_grades UNIQUE (gtype, grade)
 );
 
 CREATE TABLE staging.kihon_inventory(
@@ -822,7 +822,7 @@ CREATE TABLE staging.kihon_inventory(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_kihon_inventory UNIQUE (grade_id, number)
+  CONSTRAINT unique_staging_kihon_inventory UNIQUE (grade_id, number)
 );
 
 CREATE TABLE staging.kihon_sequences(
@@ -839,7 +839,7 @@ CREATE TABLE staging.kihon_sequences(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_kihon_sequences UNIQUE (inventory_id, seq_num)
+  CONSTRAINT unique_staging_kihon_sequences UNIQUE (inventory_id, seq_num)
 );
 
 CREATE TABLE staging.kihon_tx(
@@ -854,7 +854,7 @@ CREATE TABLE staging.kihon_tx(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_kihon_tx UNIQUE (from_sequence, to_sequence)
+  CONSTRAINT unique_staging_kihon_tx UNIQUE (from_sequence, to_sequence)
 );
 
 CREATE TABLE staging.kata_inventory(
@@ -868,7 +868,7 @@ CREATE TABLE staging.kata_inventory(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_kata UNIQUE (kata)
+  CONSTRAINT unique_staging_kata UNIQUE (kata)
 );
 
 CREATE TABLE staging.kata_sequence(
@@ -887,7 +887,7 @@ CREATE TABLE staging.kata_sequence(
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL,
-  CONSTRAINT uq_staging_kata_seq UNIQUE (kata_id, seq_num)
+  CONSTRAINT unique_staging_kata_seq UNIQUE (kata_id, seq_num)
 );
 
 CREATE TABLE staging.kata_sequence_waza (
@@ -1948,10 +1948,10 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
     WHERE staging_pk_update = true OR staging_update = true;
 
     INSERT INTO reject.kihon_sequences (
-      id_sequence, inventory_id, seq_num, stand, technic, gyaku, target_hgt, notes,
+      id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_sequence, inventory_id, seq_num, stand, technic, gyaku, target_hgt, notes,
+    SELECT id_sequence, inventory_id, seq_num, stand_id, technic_id, gyaku, target_hgt, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kihon_sequences
     WHERE NOT (staging_pk_update = true OR staging_update = true);
@@ -1995,20 +1995,20 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_tx()
     ),
     tbl_update AS (
       INSERT INTO ski.kihon_tx(
-        id_tx, from_seq, to_seq, movement, notes, tempo
+        id_tx, from_sequence, to_sequence, movement, notes, tempo
       )
-      SELECT id_tx, from_seq, to_seq, movement, notes, tempo
+      SELECT id_tx, from_sequence, to_sequence, movement, notes, tempo
       FROM (
-        SELECT tot.id_tx, from_seq, to_seq, movement, notes, tempo
+        SELECT tot.id_tx, from_sequence, to_sequence, movement, notes, tempo
         FROM staging.kihon_tx tot
         LEFT JOIN tbl_pk_update esc ON tot.id_tx = esc.id_tx
         WHERE esc.id_tx IS NULL
       )
-      ON CONFLICT (from_seq, to_seq)
+      ON CONFLICT (from_sequence, to_sequence)
       DO UPDATE SET
         id_tx = EXCLUDED.id_tx,
-        from_seq = EXCLUDED.from_seq,
-        to_seq = EXCLUDED.to_seq,
+        from_sequence = EXCLUDED.from_sequence,
+        to_sequence = EXCLUDED.to_sequence,
         movement = EXCLUDED.movement,
         notes = EXCLUDED.notes,
         tempo = EXCLUDED.tempo
@@ -2029,19 +2029,19 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_tx()
     WHERE t.id_tx = d.id_tx;
 
     INSERT INTO upsert.kihon_tx (
-      id_tx, from_seq, to_seq, movement, notes, tempo,
+      id_tx, from_sequence, to_sequence, movement, notes, tempo,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_tx, from_seq, to_seq, movement, notes, tempo,
+    SELECT id_tx, from_sequence, to_sequence, movement, notes, tempo,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kihon_tx
     WHERE staging_pk_update = true OR staging_update = true;
 
     INSERT INTO reject.kihon_tx (
-      id_tx, from_seq, to_seq, movement, notes, tempo,
+      id_tx, from_sequence, to_sequence, movement, notes, tempo,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_tx, from_seq, to_seq, movement, notes, tempo,
+    SELECT id_tx, from_sequence, to_sequence, movement, notes, tempo,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kihon_tx
     WHERE NOT (staging_pk_update = true OR staging_update = true);
@@ -2365,17 +2365,17 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
 
     WITH
     dupkey AS (
-    SELECT l.id_tx, l.from_seq, l.to_seq, l.tempo, l.direction, l.intermediate_stand, l.notes
+    SELECT l.id_tx, l.from_sequence, l.to_sequence, l.tempo, l.direction, l.intermediate_stand_id, l.notes
     FROM staging.kata_tx l
     INNER JOIN ski.kata_tx r ON l.id_tx = r.id_tx
     ),
     tbl_pk_update AS (
       UPDATE ski.kata_tx t
-      SET from_seq = dupkey.from_seq,
-        to_seq = dupkey.to_seq,
+      SET from_sequence = dupkey.from_sequence,
+        to_sequence = dupkey.to_sequence,
         tempo = dupkey.tempo,
         direction = dupkey.direction,
-        intermediate_stand = dupkey.intermediate_stand,
+        intermediate_stand_id= dupkey.intermediate_stand_id,
         notes = dupkey.notes
       FROM dupkey
       WHERE t.id_tx = dupkey.id_tx
@@ -2383,11 +2383,11 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
     ),
     tbl_update AS (
       INSERT INTO ski.kata_tx(
-        id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes
+        id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes
       )
-      SELECT id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes
+      SELECT id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes
       FROM (
-        SELECT tot.id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes
+        SELECT tot.id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes
         FROM staging.kata_tx tot
         LEFT JOIN tbl_pk_update esc ON tot.id_tx = esc.id_tx
         WHERE esc.id_tx IS NULL
@@ -2395,11 +2395,11 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
       ON CONFLICT ON CONSTRAINT unique_kata_tx
       DO UPDATE SET
         id_tx = EXCLUDED.id_tx,
-        from_seq = EXCLUDED.from_seq,
-        to_seq = EXCLUDED.to_seq,
+        from_sequence = EXCLUDED.from_sequence,
+        to_sequence = EXCLUDED.to_sequence,
         tempo = EXCLUDED.tempo,
         direction = EXCLUDED.direction,
-        intermediate_stand = EXCLUDED.intermediate_stand,
+        intermediate_stand_id= EXCLUDED.intermediate_stand_id,
         notes = EXCLUDED.notes
       RETURNING id_tx
     ),
@@ -2418,19 +2418,19 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
     WHERE t.id_tx = d.id_tx;
 
     INSERT INTO upsert.kata_tx (
-      id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes,
+      id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes,
+    SELECT id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kata_tx
     WHERE staging_pk_update = true OR staging_update = true;
 
     INSERT INTO reject.kata_tx (
-      id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes,
+      id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes,
       staging_autoid, staging_pk_update, staging_update, insertion
     )
-    SELECT id_tx, from_seq, to_seq, tempo, direction, intermediate_stand, notes,
+    SELECT id_tx, from_sequence, to_sequence, tempo, direction, intermediate_stand_id, notes,
       staging_autoid, staging_pk_update, staging_update, tms_op
     FROM staging.kata_tx
     WHERE NOT (staging_pk_update = true OR staging_update = true);
@@ -2650,8 +2650,8 @@ CREATE TABLE bkp.kihon_sequences(
 CREATE TABLE bkp.kihon_tx(
     bkp TIMESTAMP ,
     id_tx SMALLINT,
-    from_seq SMALLINT, 
-    to_seq SMALLINT,
+    from_sequence SMALLINT, 
+    to_sequence SMALLINT,
     movement movements ,
     notes TEXT,
     tempo tempo ,
@@ -2701,11 +2701,11 @@ CREATE TABLE bkp.kata_sequence_waza (
 CREATE TABLE bkp.kata_tx (
     bkp TIMESTAMP ,
     id_tx SMALLINT ,
-    from_seq SMALLINT ,
-    to_seq SMALLINT ,
+    from_sequence SMALLINT ,
+    to_sequence SMALLINT ,
     tempo tempo ,
     direction sides ,
-    intermediate_stand SMALLINT ,
+    intermediate_stand_id SMALLINT ,
     notes TEXT,
     resource_url TEXT 
 )
@@ -2843,16 +2843,16 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
     INSERT INTO bkp.kihon_tx (
         bkp  ,
         id_tx ,
-        from_seq , 
-        to_seq ,
+        from_sequence , 
+        to_sequence ,
         movement ,
         notes ,
         tempo ,
         resource_url 
     ) SELECT tms_op ,
         id_tx ,
-        from_seq , 
-        to_seq ,
+        from_sequence , 
+        to_sequence ,
         movement ,
         notes ,
         tempo ,
@@ -2929,17 +2929,17 @@ CREATE  OR REPLACE PROCEDURE ski.bkp()
     INSERT INTO bkp.kata_tx (
         bkp  ,
         id_tx  ,
-        from_seq  ,
-        to_seq  ,
+        from_sequence  ,
+        to_sequence  ,
         tempo ,
         direction ,
-        intermediate_stand  ,
+        intermediate_stand_id ,
         notes ,
         resource_url  
     ) SELECT tms_op ,
         id_tx  ,
-        from_seq  ,
-        to_seq  ,
+        from_sequence  ,
+        to_sequence  ,
         tempo ,
         direction ,
         intermediate_stand  ,
