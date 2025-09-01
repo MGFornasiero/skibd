@@ -661,7 +661,7 @@ AS $$
 $$;
 
 -- Text search helpers (targets/technics/stands/strikingparts)
-CREATE OR REPLACE FUNCTION public.get_ts_targets(_search TEXT)
+CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
 AS $$
@@ -678,7 +678,7 @@ AS $$
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_ts_technics(_search TEXT)
+CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
 AS $$
@@ -695,7 +695,7 @@ AS $$
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_ts_stands(_search TEXT)
+CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
 AS $$
@@ -712,7 +712,7 @@ AS $$
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_ts_strikingparts(_search TEXT)
+CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
 AS $$
@@ -730,7 +730,7 @@ AS $$
 $$;
 
 -- Rank normalizer
-CREATE OR REPLACE FUNCTION public.ts_normalizer(
+CREATE OR REPLACE FUNCTION ski.ts_normalizer(
   _name_rank FLOAT,
   _description_rank FLOAT,
   _notes_rank FLOAT,
@@ -745,6 +745,139 @@ AS $$
        + coalesce(_description_rank, 0) * _description_wht
        + coalesce(_notes_rank, 0) * _notes_wht;
 $$;
+
+CREATE OR REPLACE FUNCTION public.qry_ts_targets(
+  _search TEXT,
+  _name_wht FLOAT DEFAULT 1.0,
+  _description_wht FLOAT DEFAULT 0.75,
+  _notes_wht FLOAT DEFAULT 0.25
+)
+RETURNS TABLE (
+  pertinenza FLOAT,
+  pertinenza_relativa FLOAT,
+  id_target SMALLINT,
+  name VARCHAR,
+  original_name VARCHAR,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH ts AS (
+    SELECT id,
+           ski.ts_normalizer(name_rank, description_rank, notes_rank,
+                             _name_wht, _description_wht, _notes_wht) AS pertinenza
+    FROM ski.get_ts_targets(_search)
+    ORDER BY pertinenza
+  )
+  SELECT ts.pertinenza,
+         ts.pertinenza / (SELECT MAX(pertinenza) FROM ts),
+         tbl.id_target, tbl.name, tbl.original_name,
+         tbl.description, tbl.notes, tbl.resource_url
+  FROM ts
+  INNER JOIN ski.targets AS tbl ON ts.id = tbl.id_target;
+$$;
+
+CREATE OR REPLACE FUNCTION public.qry_ts_technics(
+  _search TEXT,
+  _name_wht FLOAT DEFAULT 1.0,
+  _description_wht FLOAT DEFAULT 0.75,
+  _notes_wht FLOAT DEFAULT 0.25
+)
+RETURNS TABLE (
+  pertinenza FLOAT,
+  pertinenza_relativa FLOAT,
+  id_technic SMALLINT,
+  waza public.waza_type,
+  name VARCHAR,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH ts AS (
+    SELECT id,
+           ski.ts_normalizer(name_rank, description_rank, notes_rank,
+                             _name_wht, _description_wht, _notes_wht) AS pertinenza
+    FROM ski.get_ts_technics(_search)
+    ORDER BY pertinenza
+  )
+  SELECT ts.pertinenza,
+         ts.pertinenza / (SELECT MAX(pertinenza) FROM ts),
+         tbl.id_technic, tbl.waza, tbl.name,
+         tbl.description, tbl.notes, tbl.resource_url
+  FROM ts
+  INNER JOIN ski.technics AS tbl ON ts.id = tbl.id_technic;
+$$;
+
+CREATE OR REPLACE FUNCTION public.qry_ts_stands(
+  _search TEXT,
+  _name_wht FLOAT DEFAULT 1.0,
+  _description_wht FLOAT DEFAULT 0.75,
+  _notes_wht FLOAT DEFAULT 0.25
+)
+RETURNS TABLE (
+  pertinenza FLOAT,
+  pertinenza_relativa FLOAT,
+  id_stand SMALLINT,
+  name VARCHAR,
+  description TEXT,
+  illustration_url TEXT,
+  notes TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH ts AS (
+    SELECT id,
+           ski.ts_normalizer(name_rank, description_rank, notes_rank,
+                             _name_wht, _description_wht, _notes_wht) AS pertinenza
+    FROM ski.get_ts_stands(_search)
+    ORDER BY pertinenza
+  )
+  SELECT ts.pertinenza,
+         ts.pertinenza / (SELECT MAX(pertinenza) FROM ts),
+         tbl.id_stand, tbl.name, tbl.description,
+         tbl.illustration_url, tbl.notes
+  FROM ts
+  INNER JOIN ski.stands AS tbl ON ts.id = tbl.id_stand;
+$$;
+
+CREATE OR REPLACE FUNCTION public.qry_ts_strikingparts(
+  _search TEXT,
+  _name_wht FLOAT DEFAULT 1.0,
+  _description_wht FLOAT DEFAULT 0.75,
+  _notes_wht FLOAT DEFAULT 0.25
+)
+RETURNS TABLE (
+  pertinenza FLOAT,
+  pertinenza_relativa FLOAT,
+  id_part SMALLINT,
+  name VARCHAR,
+  translation VARCHAR,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+  WITH ts AS (
+    SELECT id,
+           ski.ts_normalizer(name_rank, description_rank, notes_rank,
+                             _name_wht, _description_wht, _notes_wht) AS pertinenza
+    FROM ski.get_ts_strikingparts(_search)
+    ORDER BY pertinenza
+  )
+  SELECT ts.pertinenza,
+         ts.pertinenza / (SELECT MAX(pertinenza) FROM ts),
+         tbl.id_part, tbl.name, tbl.translation,
+         tbl.description, tbl.notes, tbl.resource_url
+  FROM ts
+  INNER JOIN ski.strikingparts AS tbl ON ts.id = tbl.id_part;
+$$;
+
+
 
 -- =============================================================
 -- Staging/Upsert/Reject tables
