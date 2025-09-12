@@ -1,3 +1,6 @@
+-- =============================================================
+-- cleanup existing objects (if any)
+-- =============================================================
 DROP SCHEMA IF EXISTS ski CASCADE;
 DROP SCHEMA IF EXISTS bkp CASCADE;
 DROP SCHEMA IF EXISTS staging CASCADE;
@@ -15,6 +18,53 @@ DROP TYPE IF EXISTS kata_series CASCADE;
 DROP TYPE IF EXISTS movements CASCADE;
 DROP TYPE IF EXISTS sides CASCADE;
 DROP TYPE IF EXISTS grade_type CASCADE;
+
+
+DO $$
+DECLARE
+    r record;
+BEGIN
+    -- Loop through all functions in the 'public' schema
+    FOR r IN
+        SELECT 'DROP FUNCTION IF EXISTS ' || ns.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ') CASCADE;' as drop_cmd
+        FROM pg_proc p
+        JOIN pg_namespace ns ON p.pronamespace = ns.oid
+        WHERE ns.nspname = 'public'
+          AND p.prokind = 'f' -- 'f' for a normal function
+    LOOP
+        -- Execute the generated DROP command
+        EXECUTE r.drop_cmd;
+    END LOOP;
+END $$;
+
+-- =============================================================
+-- Read-only user setup
+-- =============================================================
+CREATE ROLE readonly_user WITH LOGIN PASSWORD 'StrongPasswordHere';
+REVOKE ALL ON DATABASE mydb FROM readonly_user;
+
+GRANT CONNECT ON DATABASE mydb TO readonly_user;
+
+GRANT USAGE ON SCHEMA public TO readonly_user;
+
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT ON TABLES TO readonly_user;
+
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO readonly_user;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT EXECUTE ON FUNCTIONS TO readonly_user;
+
+--valutare se servono anche le sequenze
+--GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO readonly_user;
+--ALTER DEFAULT PRIVILEGES IN SCHEMA public
+--GRANT SELECT ON SEQUENCES TO readonly_user;
+
+-- =============================================================
+-- Create Schemas
+-- =============================================================
 
 CREATE SCHEMA ski;
 CREATE SCHEMA bkp;
@@ -269,6 +319,7 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
+  tempo            public.tempo, --new added adjust the functions
   notes             TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED
 );
@@ -288,6 +339,23 @@ CREATE TABLE ski.kata_tx (
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kata_tx UNIQUE (from_sequence, to_sequence)
+);
+
+-- -------------------------------------------------------------
+-- Table: ski.bunkai
+-- Bunkai (of each step).
+-- Valutare come modellare il bunkai, riferito ad ogni singolo step della sequenza del kata, ha senso proporre bunkai "ufficiali" inventati per ogni kata?
+-- -------------------------------------------------------------
+CREATE TABLE ski.bunkai (
+  id_bunkai SMALLINT PRIMARY KEY,
+  bunkai_version SMALLINT DEFAULT 1,
+  sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT unique_bunkai_kata_sequence UNIQUE (bunkai_version, sequence_id)
 );
 
 -- =============================================================
@@ -372,10 +440,10 @@ $$;
 
 -- List kihon inventory rows for a given (grade, type)
 CREATE OR REPLACE FUNCTION public.get_kihons(_grade INT, _type VARCHAR)
-RETURNS TABLE(id_inventory INT, grade_id INT, number INT)
+RETURNS TABLE(id_inventory INT, grade_id INT, number INT , notes TEXT)
 LANGUAGE sql
 AS $$
-  SELECT id_inventory, grade_id, number
+  SELECT id_inventory, grade_id, number , notes
   FROM ski.kihon_inventory
   WHERE grade_id = public.get_gradeid(_grade, _type);
 $$;
@@ -660,6 +728,140 @@ AS $$
   ORDER BY inv.number, seq.seq_num;
 $$;
 
+-- new func
+
+CREATE OR REPLACE FUNCTION public.get_nkihon(_grade_id INT)
+RETURNS INT
+LANGUAGE sql
+AS $$
+    SELECT MAX(number) AS nkihon
+    FROM ski.kihon_inventory
+    WHERE grade_id = _grade_id
+    GROUP BY grade_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_grade(_grade_id INT)
+RETURNS TABLE (
+    grade SMALLINT,
+    gtype public.grade_type
+)
+LANGUAGE sql
+AS $$
+    SELECT grade, gtype
+    FROM ski.grades
+    WHERE id_grade = _grade_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_technics()
+RETURNS TABLE (
+    id_technic SMALLINT,
+    waza public.waza_type,
+    name TEXT,
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_technic, waza, name, description, notes, resource_url
+    FROM ski.technics
+    WHERE waza <> '_'::waza_type ;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_stands()
+RETURNS TABLE (
+    id_stand SMALLINT,
+    name TEXT,
+    description TEXT,
+    illustration_url TEXT,
+    notes TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_stand, name, description, illustration_url, notes
+    FROM ski.stands;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_targets()
+RETURNS TABLE (
+    id_target SMALLINT,
+    name TEXT,
+    original_name TEXT,
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_target, name, original_name, description, notes, resource_url
+    FROM ski.targets;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_strikingparts()
+RETURNS TABLE (
+    id_part SMALLINT,
+    name TEXT,
+    translation TEXT,
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_part, name, translation, description, notes, resource_url
+    FROM ski.strikingparts;
+$$;
+
+
+CREATE OR REPLACE FUNCTION public.get_katainfo(_kata_id INT)
+RETURNS TABLE (
+    kata VARCHAR,
+    serie public.kata_series,
+    starting_leg public.sides
+)
+LANGUAGE sql
+AS $$
+    SELECT kata, serie, starting_leg
+    FROM ski.kata_inventory
+    WHERE id_kata = _kata_id;
+$$;
+
+CREATE OR REPLACE FUNCTION public.show_gradeinventory()
+RETURNS TABLE (
+    grade SMALLINT,
+    gtype public.grade_type,
+    id_grade SMALLINT
+)
+LANGUAGE sql
+AS $$
+    SELECT grade, gtype, id_grade
+    FROM ski.grades;
+$$;
+
+CREATE OR REPLACE FUNCTION public.show_katainventory()
+RETURNS TABLE (
+    id_kata SMALLINT,
+    kata VARCHAR,
+    serie public.kata_series,
+    starting_leg public.sides,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_kata, kata, serie, starting_leg, notes, resource_url
+    FROM ski.kata_inventory;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
+RETURNS TEXT
+LANGUAGE sql
+AS $$
+  SELECT notes 
+  FROM ski.kihon_inventory
+  WHERE grade_id = _gradeid AND number = _num;
+$$;
+
 -- Text search helpers (targets/technics/stands/strikingparts)
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
@@ -769,14 +971,14 @@ AS $$
            ski.ts_normalizer(name_rank, description_rank, notes_rank,
                              _name_wht, _description_wht, _notes_wht) AS pertinenza
     FROM ski.get_ts_targets(_search)
-    ORDER BY pertinenza
   )
   SELECT ts.pertinenza,
          ts.pertinenza / (SELECT MAX(pertinenza) FROM ts),
          tbl.id_target, tbl.name, tbl.original_name,
          tbl.description, tbl.notes, tbl.resource_url
   FROM ts
-  INNER JOIN ski.targets AS tbl ON ts.id = tbl.id_target;
+  INNER JOIN ski.targets AS tbl ON ts.id = tbl.id_target
+  ORDER BY pertinenza DESC;
 $$;
 
 CREATE OR REPLACE FUNCTION public.qry_ts_technics(

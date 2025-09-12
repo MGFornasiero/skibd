@@ -43,28 +43,8 @@ INSERT INTO staging.strikingparts( id_part ,name ,translation ,description ) VAL
     ( 31 , 'Heisoku' ,NULL ,$$Dorso del piede$$ );
 
 
-INSERT INTO staging.grades (id_grade,gtype,grade) VALUES 
-    (1,'kyu',9),
-    (2,'kyu',8),
-    (3,'kyu',7),
-    (4,'kyu',6),
-    (5,'kyu',5),
-    (6,'kyu',4),
-    (7,'kyu',3),
-    (8,'kyu',2),
-    (9,'kyu',1),
-    (10,'dan',1),
-    (11,'dan',2),
-    (12,'dan',3),
-    (13,'dan',4),
-    (14,'dan',5),
-    (15,'dan',6),
-    (16,'dan',7)
-    ;
-
-
 INSERT INTO staging.stands(id_stand ,name ,description ,illustration_url ,notes ) VALUES
-    ( 1 ,'Heiko dachi' ,$$Posizione naturale a gambe divaricate e piedi paralleli (YOI)$$ ,NULL ,NULL ),
+        ( 1 ,'Heiko dachi' ,$$Posizione naturale a gambe divaricate e piedi paralleli (YOI)$$ ,NULL ,NULL ),
     ( 2 ,'Musubi dachi' ,$$Posizione naturale con talloni uniti e punte divaricate a 90° (nel saluto)$$ ,NULL ,NULL ),
     ( 3 ,'Heisoku dachi' ,$$Posizione naturale con piedi e talloni uniti$$ ,NULL ,NULL ),
     ( 4 ,'Zenkutsu dachi' ,$$Posizione frontale$$ ,NULL ,NULL ),
@@ -84,7 +64,7 @@ INSERT INTO staging.stands(id_stand ,name ,description ,illustration_url ,notes 
 
 
 INSERT INTO staging.technics(id_technic,waza ,name ,description ,notes ,resource_url ) VALUES
-    ( 0 , 'NA' ,'Yoi',$$Posizione neutra ma pronta$$ ,$$Posizione di partenza neutra ma pronta per l'azione$$ ,NULL ),
+        ( 0 , 'NA' ,'Yoi',$$Posizione neutra ma pronta$$ ,$$Posizione di partenza neutra ma pronta per l'azione$$ ,NULL ),
     ( 1 , 'NA' ,'Guardia',$$$$ ,NULL ,NULL ),
     ( 2 , 'NA' ,'Kiri Kaeshi',$$Cambio guardia$$ ,NULL ,NULL ),
     ( 10 , 'Uchi' ,'Age tsuki',$$Pugno diritto che sale dal basso verso l'alto$$ ,NULL ,NULL ),
@@ -165,6 +145,7 @@ INSERT INTO staging.technics(id_technic,waza ,name ,description ,notes ,resource
     ( 85 , 'Uke' ,'Age Shuto Uke',$$Parata a taglio verso l'alto (movimento che si fa con la mano opposta quando si esegue Age uke da studio)$$ ,NULL ,NULL ),
     ( 86 , 'Uchi' ,'Nukite',$$Colpo con la punta delle dita con la mano distesa$$ ,NULL ,NULL ),
     ( 87 , 'Uke' ,'Empi Uke',$$Braccio forma un triangolo tra spalla gomito e cresta iliaca (parata del 3 kata)$$ ,NULL ,NULL ),
+    ( 88 , NULL ,'Gedan Kekomi',$$$$ ,NULL ,NULL ),
     ( 90 , NULL ,'Mawatte',$$Cambio di direzione, 180° dal lato interno$$ ,NULL ,NULL ),
     ( -500 , '_' ,'Vedi note',$$$$ ,NULL ,NULL ),
     ( -200 , 'NA' ,'Shi Ho Soto Uke Gyakuzuki',$$Quattro direzioni$$ ,NULL ,NULL ),
@@ -174,6 +155,24 @@ INSERT INTO staging.technics(id_technic,waza ,name ,description ,notes ,resource
     ( -250 , 'NA' ,'Kime Waza',$$Controllo$$ ,NULL ,NULL )
 ;
 
+INSERT INTO staging.grades (id_grade,gtype,grade, color) VALUES 
+    ( 1 , 'kyu' , 9 , 'bianco' ),
+    ( 2 , 'kyu' , 8 , 'bianco' ),
+    ( 3 , 'kyu' , 7 , 'bianco' ),
+    ( 4 , 'kyu' , 6 , 'giallo' ),
+    ( 5 , 'kyu' , 5 , 'verde' ),
+    ( 6 , 'kyu' , 4 , 'blu' ),
+    ( 7 , 'kyu' , 3 , 'marrone' ),
+    ( 8 , 'kyu' , 2 , 'marrone' ),
+    ( 9 , 'kyu' , 1 , 'marrone' ),
+    ( 10 , 'dan' , 1 , 'nero' ),
+    ( 11 , 'dan' , 2 , 'nero' ),
+    ( 12 , 'dan' , 3 , 'nero' ),
+    ( 13 , 'dan' , 4 , 'nero' ),
+    ( 14 , 'dan' , 5 , 'nero' ),
+    ( 15 , 'dan' , 6 , 'nero' ),
+    ( 16 , 'dan' , 7 , 'nero' )
+    ;
 
 INSERT INTO staging.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
     ( 1 ,'1' ,'1' ),
@@ -536,6 +535,46 @@ INSERT INTO staging.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id
     ( 289 ,79 ,3,4 , 14 ,'true' ,'Jodan' , NULL , NULL ),
     ( 290 ,80 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 291 ,80 ,1,4 , -202 ,'false' ,NULL , NULL , NULL ),
+    ( 300 ,81 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 301 ,81 ,1,4 , 51 ,'false' ,NULL , NULL , NULL ),
+    ( 302 ,81 ,2,4 , 58 ,'false' ,NULL , NULL , NULL ),
+    ( 303 ,81 ,3,4 , 37 ,'false' ,NULL , NULL , NULL ),
+    ( 304 ,81 ,4,4 , 11 ,'false' ,NULL , NULL , NULL ),
+    ( 305 ,81 ,5,4 , 14 ,'true' ,NULL , NULL , NULL ),
+    ( 306 ,82 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 307 ,82 ,1,4 , 38 ,'false' ,NULL , NULL , NULL ),
+    ( 308 ,82 ,2,5 , 64 ,'false' ,NULL , NULL , NULL ),
+    ( 309 ,82 ,3,4 , 14 ,'true' ,NULL , NULL , NULL ),
+    ( 310 ,82 ,4,4 , 44 ,'false' ,NULL , NULL , NULL ),
+    ( 311 ,83 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 312 ,83 ,1,4 , 76 ,'false' ,'Jodan' , NULL , NULL ),
+    ( 313 ,83 ,2,4 , 73 ,'true' ,NULL , NULL , NULL ),
+    ( 314 ,83 ,3,4 , 41 ,'false' ,NULL , NULL , NULL ),
+    ( 315 ,84 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 316 ,84 ,1,4 , 11 ,'false' ,NULL , NULL , NULL ),
+    ( 317 ,84 ,2,4 , 26 ,'true' ,'Jodan' , NULL , NULL ),
+    ( 318 ,84 ,3,4 , 83 ,'false' ,NULL , NULL , NULL ),
+    ( 319 ,84 ,4,4 , 78 ,'false' ,NULL , NULL , NULL ),
+    ( 320 ,84 ,5,4 , 14 ,'true' ,NULL , NULL , NULL ),
+    ( 321 ,85 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 322 ,85 ,1,4 , 41 ,'false' ,NULL , NULL , NULL ),
+    ( 323 ,85 ,2,4 , 76 ,'true' ,NULL , NULL , NULL ),
+    ( 324 ,85 ,3,4 , 19 ,'false' ,NULL , NULL , NULL ),
+    ( 325 ,85 ,4,4 , 86 ,'true' ,'Chudan' , NULL , NULL ),
+    ( 326 ,86 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 327 ,86 ,1,4 , 41 ,'false' ,'Jodan' , NULL , NULL ),
+    ( 328 ,86 ,2,4 , -500 ,'false' ,NULL , $$Dice gedan kekomi$$ , NULL ),
+    ( 329 ,86 ,3,4 , 73 ,'false' ,NULL , NULL , NULL ),
+    ( 330 ,86 ,4,4 , 44 ,'false' ,NULL , NULL , NULL ),
+    ( 331 ,86 ,5,4 , 58 ,'false' ,NULL , $$Ruotare 180 °$$ , NULL ),
+    ( 332 ,87 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 333 ,87 ,1,4 , 41 ,'false' ,NULL , NULL , NULL ),
+    ( 334 ,87 ,2,4 , 83 ,'false' ,NULL , $$Stessa gamba$$ , NULL ),
+    ( 335 ,87 ,3,4 , 78 ,'false' ,NULL , $$Stessa gamba$$ , NULL ),
+    ( 336 ,88 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 337 ,88 ,1,4 , -203 ,'false' ,NULL , $$Parata esterna$$ , NULL ),
+    ( 340 ,89 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
+    ( 341 ,89 ,1,4 , -250 ,'false' ,NULL , NULL , NULL ),
     ( 456 ,91 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 457 ,91 ,1,4 , 70 ,'false' ,'Chudan' , NULL , NULL ),
     ( 458 ,91 ,2,4 , 11 ,'true' ,'Chudan' , NULL , NULL ),
@@ -737,34 +776,65 @@ INSERT INTO staging.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement ,notes 
     ( 423 , 287 , 288, 'Fwd' , NULL , NULL ),
     ( 426 , 288 , 289, 'Still' , NULL , NULL ),
     ( 429 , 290 , 291, 'Still' , NULL , NULL ),
-    ( 455 , 456 , 457, 'Fwd' , NULL , NULL ),
-    ( 456 , 457 , 458, 'Bkw' , NULL , NULL ),
-    ( 457 , 458 , 459, 'Still' , NULL , NULL ),
-    ( 458 , 459 , 460, 'Still' , NULL , NULL ),
-    ( 465 , 466 , 467, 'Fwd' , NULL , NULL ),
-    ( 466 , 467 , 468, 'Still' , NULL , NULL ),
-    ( 467 , 468 , 469, 'Fwd' , NULL , NULL ),
-    ( 468 , 469 , 470, 'Still' , NULL , NULL ),
-    ( 475 , 476 , 477, 'Bkw' , NULL , NULL ),
-    ( 476 , 477 , 478, 'Fwd' , NULL , NULL ),
-    ( 477 , 478 , 479, 'Fwd' , NULL , NULL ),
-    ( 478 , 479 , 480, 'Still' , NULL , NULL ),
-    ( 485 , 486 , 487, 'Still' , NULL , NULL ),
-    ( 486 , 487 , 488, 'Still' , $$Il braccio frontale resta avanzato$$ , NULL ),
-    ( 495 , 496 , 497, 'Bkw' , NULL , NULL ),
-    ( 496 , 497 , 498, 'Still' , NULL , NULL ),
-    ( 497 , 498 , 499, 'Fwd' , NULL , NULL ),
-    ( 498 , 499 , 500, 'Still' , NULL , NULL ),
-    ( 505 , 506 , 507, 'Bkw' , NULL , NULL ),
-    ( 506 , 507 , 508, 'Fwd' , NULL , NULL ),
-    ( 507 , 508 , 509, 'Still' , NULL , NULL ),
-    ( 508 , 509 , 510, 'Still' , NULL , NULL ),
-    ( 515 , 516 , 517, 'Fwd' , NULL , NULL ),
-    ( 516 , 517 , 518, 'Still' , NULL , NULL ),
-    ( 525 , 526 , 527, 'Still' , NULL , NULL ),
-    ( 526 , 527 , 528, 'Still' , NULL , NULL ),
-    ( 527 , 528 , 529, 'Still' , NULL , NULL ),
-    ( 528 , 529 , 530, 'Still' , NULL , NULL )
+    ( 432 , 300 , 301, 'Fwd' , NULL , NULL ),
+    ( 435 , 301 , 302, 'Bkw' , NULL , NULL ),
+    ( 438 , 302 , 303, 'Still' , NULL , NULL ),
+    ( 441 , 303 , 304, 'Still' , NULL , NULL ),
+    ( 444 , 304 , 305, 'Still' , NULL , NULL ),
+    ( 447 , 306 , 307, 'Bkw' , NULL , NULL ),
+    ( 450 , 307 , 308, 'Still' , NULL , NULL ),
+    ( 453 , 308 , 309, 'Fwd' , NULL , NULL ),
+    ( 456 , 309 , 310, 'Fwd' , NULL , NULL ),
+    ( 459 , 311 , 312, 'Bkw' , NULL , NULL ),
+    ( 462 , 312 , 313, 'Still' , NULL , NULL ),
+    ( 465 , 313 , 314, 'Fwd' , NULL , NULL ),
+    ( 468 , 315 , 316, 'Bkw' , NULL , NULL ),
+    ( 471 , 316 , 317, 'Still' , NULL , NULL ),
+    ( 474 , 317 , 318, 'Fwd' , NULL , NULL ),
+    ( 477 , 318 , 319, 'Fwd' , NULL , NULL ),
+    ( 480 , 319 , 320, 'Still' , NULL , NULL ),
+    ( 483 , 321 , 322, 'Fwd' , NULL , NULL ),
+    ( 486 , 322 , 323, 'Still' , NULL , NULL ),
+    ( 489 , 323 , 324, 'Bkw' , NULL , NULL ),
+    ( 492 , 324 , 325, 'Still' , NULL , NULL ),
+    ( 495 , 326 , 327, 'Fwd' , NULL , NULL ),
+    ( 498 , 327 , 328, 'Fwd' , NULL , NULL ),
+    ( 501 , 328 , 329, 'Still' , NULL , NULL ),
+    ( 504 , 329 , 330, 'Fwd' , NULL , NULL ),
+    ( 507 , 330 , 331, 'Fwd' , $$Rotazione 180°$$ , NULL ),
+    ( 510 , 332 , 333, 'Still' , NULL , NULL ),
+    ( 513 , 333 , 334, 'Still' , NULL , NULL ),
+    ( 516 , 334 , 335, 'Still' , NULL , NULL ),
+    ( 519 , 336 , 337, 'Still' , NULL , NULL ),
+    ( 522 , 340 , 341, 'Still' , NULL , NULL ),
+    ( 525 , 456 , 457, 'Fwd' , NULL , NULL ),
+    ( 526 , 457 , 458, 'Bkw' , NULL , NULL ),
+    ( 527 , 458 , 459, 'Still' , NULL , NULL ),
+    ( 528 , 459 , 460, 'Still' , NULL , NULL ),
+    ( 531 , 466 , 467, 'Fwd' , NULL , NULL ),
+    ( 532 , 467 , 468, 'Still' , NULL , NULL ),
+    ( 533 , 468 , 469, 'Fwd' , NULL , NULL ),
+    ( 534 , 469 , 470, 'Still' , NULL , NULL ),
+    ( 537 , 476 , 477, 'Bkw' , NULL , NULL ),
+    ( 538 , 477 , 478, 'Fwd' , NULL , NULL ),
+    ( 539 , 478 , 479, 'Fwd' , NULL , NULL ),
+    ( 540 , 479 , 480, 'Still' , NULL , NULL ),
+    ( 543 , 486 , 487, 'Still' , NULL , NULL ),
+    ( 544 , 487 , 488, 'Still' , $$Il braccio frontale resta avanzato$$ , NULL ),
+    ( 547 , 496 , 497, 'Bkw' , NULL , NULL ),
+    ( 548 , 497 , 498, 'Still' , NULL , NULL ),
+    ( 549 , 498 , 499, 'Fwd' , NULL , NULL ),
+    ( 550 , 499 , 500, 'Still' , NULL , NULL ),
+    ( 553 , 506 , 507, 'Bkw' , NULL , NULL ),
+    ( 554 , 507 , 508, 'Fwd' , NULL , NULL ),
+    ( 555 , 508 , 509, 'Still' , NULL , NULL ),
+    ( 556 , 509 , 510, 'Still' , NULL , NULL ),
+    ( 559 , 516 , 517, 'Fwd' , NULL , NULL ),
+    ( 560 , 517 , 518, 'Still' , NULL , NULL ),
+    ( 563 , 526 , 527, 'Still' , NULL , NULL ),
+    ( 564 , 527 , 528, 'Still' , NULL , NULL ),
+    ( 565 , 528 , 529, 'Still' , NULL , NULL ),
+    ( 566 , 529 , 530, 'Still' , NULL , NULL )
 ;
 
  
@@ -979,15 +1049,3 @@ INSERT INTO staging.kata_tx(
     ( 56 , 57 , 'Slow' , 'sx' , NULL ),
     ( 57 , 58 , 'Fast' , 'frontal' , NULL )
 ;
-
-
-
-
-
-
-
-
-
-
-
-
