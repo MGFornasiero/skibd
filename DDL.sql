@@ -1,6 +1,33 @@
 -- =============================================================
 -- cleanup existing objects (if any)
 -- =============================================================
+
+DO $$
+BEGIN
+   -- Check if the 'student' role exists before trying to clean it up.
+   IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student') THEN
+      RAISE NOTICE 'Role "student" exists. Cleaning up...';
+      -- Terminate any active connections for the 'student' role to allow dropping it.
+      PERFORM pg_terminate_backend(pid)
+      FROM pg_stat_activity
+      WHERE usename = 'student';
+
+      -- Temporarily grant 'student' role to the current user ('postgres')
+      -- to gain permissions for REASSIGN OWNED. This is required even for superusers.
+      EXECUTE 'GRANT student TO ' || quote_ident(current_user);
+
+      -- Drop objects owned by 'student' and, crucially, revoke any privileges
+      -- granted to 'student' on other objects. This removes all dependencies.
+      EXECUTE 'DROP OWNED BY student CASCADE';
+
+      -- Revoke the temporary membership.
+      EXECUTE 'REVOKE student FROM ' || quote_ident(current_user);
+
+      -- Now that the role owns nothing, it can be dropped.
+      EXECUTE 'DROP ROLE student';
+   END IF;
+END $$;
+
 DROP SCHEMA IF EXISTS ski CASCADE;
 DROP SCHEMA IF EXISTS bkp CASCADE;
 DROP SCHEMA IF EXISTS staging CASCADE;
@@ -40,27 +67,27 @@ END $$;
 -- =============================================================
 -- Read-only user setup
 -- =============================================================
-CREATE ROLE readonly_user WITH LOGIN PASSWORD 'StrongPasswordHere';
-REVOKE ALL ON DATABASE mydb FROM readonly_user;
+CREATE ROLE student WITH LOGIN PASSWORD 'StrongPasswordHere';
+REVOKE ALL ON DATABASE postgres FROM student;
 
-GRANT CONNECT ON DATABASE mydb TO readonly_user;
+GRANT CONNECT ON DATABASE postgres TO student;
 
-GRANT USAGE ON SCHEMA public TO readonly_user;
+GRANT USAGE ON SCHEMA public TO student;
 
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT SELECT ON TABLES TO readonly_user;
-
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO readonly_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO student;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT EXECUTE ON FUNCTIONS TO readonly_user;
+GRANT SELECT ON TABLES TO student;
+
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO student;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT EXECUTE ON FUNCTIONS TO student;
 
 --valutare se servono anche le sequenze
---GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO readonly_user;
+--GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO student;
 --ALTER DEFAULT PRIVILEGES IN SCHEMA public
---GRANT SELECT ON SEQUENCES TO readonly_user;
+--GRANT SELECT ON SEQUENCES TO student;
 
 -- =============================================================
 -- Create Schemas
@@ -134,6 +161,13 @@ CREATE SEQUENCE ski.seq_kata_id_kata     AS SMALLINT;
 CREATE SEQUENCE ski.seq_kata_id_sequence AS SMALLINT;
 CREATE SEQUENCE ski.seq_kata_id_kswaza   AS SMALLINT;
 CREATE SEQUENCE ski.seq_kata_id_tx       AS SMALLINT;
+
+CREATE SEQUENCE ski.seq_bunkai_id_bunkai   AS SMALLINT;
+CREATE SEQUENCE ski.seq_bunkai_id_sequence AS SMALLINT;
+
+-- =============================================================
+-- Domain Tables (in schema ski)
+
 
 -- =============================================================
 -- Domain Tables (in schema ski)
@@ -319,7 +353,6 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
-  tempo            public.tempo, --new added adjust the functions
   notes             TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED
 );
@@ -346,16 +379,28 @@ CREATE TABLE ski.kata_tx (
 -- Bunkai (of each step).
 -- Valutare come modellare il bunkai, riferito ad ogni singolo step della sequenza del kata, ha senso proporre bunkai "ufficiali" inventati per ogni kata?
 -- -------------------------------------------------------------
-CREATE TABLE ski.bunkai (
+
+CREATE TABLE ski.bunkai_inventory (
   id_bunkai SMALLINT PRIMARY KEY,
-  bunkai_version SMALLINT DEFAULT 1,
-  sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
+  kata_id SMALLINT NOT NULL REFERENCES ski.kata_inventory(id_kata),
+  version SMALLINT DEFAULT 1,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT,
+  CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
+);
+
+CREATE TABLE ski.bunkai_sequences (
+  id_bunkaisequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_bunkai_id_sequence'),
+  bunkai_id SMALLINT NOT NULL REFERENCES ski.bunkai_inventory(id_bunkai),
+  kata_sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
   description TEXT,
   notes TEXT,
   resource_url TEXT,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT unique_bunkai_kata_sequence UNIQUE (bunkai_version, sequence_id)
+  CONSTRAINT unique_bunkai_sequence UNIQUE (bunkai_id, kata_sequence_id)
 );
 
 -- =============================================================
@@ -410,17 +455,6 @@ CREATE INDEX idx_kata_inventory_name  ON ski.kata_inventory(kata);
 CREATE INDEX idx_grades_gtype         ON ski.grades(gtype);
 CREATE INDEX idx_kata_sequence_side   ON ski.kata_sequence(side);
 CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
-
-
-
--- Valutare come modellare il bunkai, catalogo e riferimento al kata, ma valutare le info
--- CREATE TABLE ski.bunkai_inventory(
---     bunkai_id SMALLINT PRIMARY KEY ,
---     kata_id SMALLINT NOT NULL REFERENCES ski.kata_inventory(id_kata) ,
--- )
--- CREATE TABLE ski.kata_bunkai(
---     sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
--- );
 
 
 -- =============================================================
@@ -851,6 +885,23 @@ LANGUAGE sql
 AS $$
     SELECT id_kata, kata, serie, starting_leg, notes, resource_url
     FROM ski.kata_inventory;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
+RETURNS TABLE (
+    id_bunkai SMALLINT,
+    kata_id SMALLINT,
+    version SMALLINT,
+    name VARCHAR,
+    description TEXT,
+    notes TEXT,
+    resource_url TEXT
+)
+LANGUAGE sql
+AS $$
+    SELECT id_bunkai, kata_id, version, name, description, notes, resource_url
+    FROM ski.bunkai_inventory
+    WHERE kata_id = _kata_id;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
