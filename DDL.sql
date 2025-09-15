@@ -1,8 +1,10 @@
 -- =============================================================
--- cleanup existing objects (if any)
+-- Cleanup existing objects (if any)
+-- This section removes existing roles, schemas, types, and functions
+-- to ensure a clean slate before creating new objects.
 -- =============================================================
 
-DO $$
+DO $Clean$
 BEGIN
    -- Check if the 'student' role exists before trying to clean it up.
    IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student') THEN
@@ -26,7 +28,7 @@ BEGIN
       -- Now that the role owns nothing, it can be dropped.
       EXECUTE 'DROP ROLE student';
    END IF;
-END $$;
+END $Clean$;
 
 DROP SCHEMA IF EXISTS ski CASCADE;
 DROP SCHEMA IF EXISTS bkp CASCADE;
@@ -47,7 +49,7 @@ DROP TYPE IF EXISTS sides CASCADE;
 DROP TYPE IF EXISTS grade_type CASCADE;
 
 
-DO $$
+DO $Clean$
 DECLARE
     r record;
 BEGIN
@@ -62,12 +64,15 @@ BEGIN
         -- Execute the generated DROP command
         EXECUTE r.drop_cmd;
     END LOOP;
-END $$;
+END $Clean$;
 
 -- =============================================================
 -- Read-only user setup
+-- This section creates a read-only role `student` and grants
+-- appropriate permissions for accessing the database.
 -- =============================================================
-CREATE ROLE student WITH LOGIN PASSWORD 'StrongPasswordHere';
+CREATE ROLE student ; -- WITH LOGIN PASSWORD 'Password'
+
 REVOKE ALL ON DATABASE postgres FROM student;
 
 GRANT CONNECT ON DATABASE postgres TO student;
@@ -84,13 +89,14 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO student;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
 GRANT EXECUTE ON FUNCTIONS TO student;
 
---valutare se servono anche le sequenze
+--valutare se servono anche le sequenze non credo perchè non fa insert
 --GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO student;
 --ALTER DEFAULT PRIVILEGES IN SCHEMA public
 --GRANT SELECT ON SEQUENCES TO student;
 
 -- =============================================================
 -- Create Schemas
+-- This section creates the necessary schemas for the database.
 -- =============================================================
 
 CREATE SCHEMA ski;
@@ -101,6 +107,7 @@ CREATE SCHEMA reject;
 
 -- =============================================================
 -- Types (moved to public)
+-- This section defines custom types used in the database.
 -- =============================================================
 
 -- Karate grading (kyu/dan)
@@ -146,6 +153,7 @@ CREATE TYPE public.absolute_directions AS ENUM ('N','NE','E','SE','S','SO','O','
 
 -- =============================================================
 -- Sequences (kept in `ski`)
+-- This section defines sequences for generating unique IDs.
 -- =============================================================
 CREATE SEQUENCE ski.seq_id_target  AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_part    AS SMALLINT;
@@ -165,12 +173,10 @@ CREATE SEQUENCE ski.seq_kata_id_tx       AS SMALLINT;
 CREATE SEQUENCE ski.seq_bunkai_id_bunkai   AS SMALLINT;
 CREATE SEQUENCE ski.seq_bunkai_id_sequence AS SMALLINT;
 
--- =============================================================
--- Domain Tables (in schema ski)
-
 
 -- =============================================================
 -- Domain Tables (in schema ski)
+-- This section defines the main domain tables for the database.
 -- =============================================================
 
 -- -------------------------------------------------------------
@@ -255,6 +261,7 @@ CREATE TABLE ski.grades (
 
 -- =============================================================
 -- Compendium Tables (Kihon)
+-- This section defines tables related to kihon sequences and transitions.
 -- =============================================================
 
 -- -------------------------------------------------------------
@@ -306,6 +313,7 @@ CREATE TABLE ski.kihon_tx (
 
 -- =============================================================
 -- Compendium Tables (Kata)
+-- This section defines tables related to kata sequences and transitions.
 -- =============================================================
 
 -- -------------------------------------------------------------
@@ -405,6 +413,7 @@ CREATE TABLE ski.bunkai_sequences (
 
 -- =============================================================
 -- Indexes (FTS + Join helpers)
+-- This section creates indexes for full-text search and join optimization.
 -- =============================================================
 
 -- FTS indexes
@@ -459,37 +468,38 @@ CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
 
 -- =============================================================
 -- Functions 
+-- This section defines functions for retrieving and manipulating data.
 -- =============================================================
 
 -- Return the id_grade for (grade, type)
 CREATE OR REPLACE FUNCTION public.get_gradeid(_grade INT, _type VARCHAR)
 RETURNS SMALLINT
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_grade
   FROM ski.grades
   WHERE grade = _grade
     AND gtype = _type::public.grade_type;
-$$;
+$Func$;
 
 -- List kihon inventory rows for a given (grade, type)
 CREATE OR REPLACE FUNCTION public.get_kihons(_grade INT, _type VARCHAR)
 RETURNS TABLE(id_inventory INT, grade_id INT, number INT , notes TEXT)
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_inventory, grade_id, number , notes
   FROM ski.kihon_inventory
   WHERE grade_id = public.get_gradeid(_grade, _type);
-$$;
+$Func$;
 
 -- Get kihon inventory id by (grade_id, sequence number)
 CREATE OR REPLACE FUNCTION public.get_kihonid(_gradeid INT, _num INT)
 RETURNS INT
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_inventory FROM ski.kihon_inventory
   WHERE grade_id = _gradeid AND number = _num;
-$$;
+$Func$;
 
 -- Technique info
 CREATE OR REPLACE FUNCTION public.get_technic_info(_technic_id INT)
@@ -502,11 +512,11 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_technic, waza, name, description, notes, resource_url
   FROM ski.technics
   WHERE id_technic = _technic_id;
-$$;
+$Func$;
 
 -- Stand info
 CREATE OR REPLACE FUNCTION public.get_stand_info(_stand_id INT)
@@ -518,11 +528,11 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_stand, name, description, illustration_url, notes
   FROM ski.stands
   WHERE id_stand = _stand_id;
-$$;
+$Func$;
 
 -- Strikingpart info
 CREATE OR REPLACE FUNCTION public.get_strikingparts_info(_id_part INT)
@@ -535,11 +545,11 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_part, name, translation, description, notes, resource_url
   FROM ski.strikingparts
   WHERE id_part = _id_part;
-$$;
+$Func$;
 
 -- Target info
 CREATE OR REPLACE FUNCTION public.get_target_info(_id_target INT)
@@ -552,11 +562,11 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT id_target, name, original_name, description, notes, resource_url
   FROM ski.targets
   WHERE id_target = _id_target;
-$$;
+$Func$;
 
 -- Kata sequence with aggregated waza (one row per step)
 CREATE OR REPLACE FUNCTION public.get_katasequence(_kata_id INT)
@@ -574,7 +584,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT seq.id_sequence,
          seq.kata_id,
          seq.seq_num,
@@ -619,7 +629,7 @@ AS $$
   WHERE seq.kata_id = _kata_id
   GROUP BY seq.id_sequence
   ORDER BY seq.seq_num;
-$$;
+$Func$;
 
 -- Kata transitions filtered by kata_id
 CREATE OR REPLACE FUNCTION public.get_katatx(_kata_id INT)
@@ -632,7 +642,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH relevantseq AS (
     SELECT id_sequence FROM ski.kata_sequence WHERE kata_id = _kata_id
   )
@@ -645,7 +655,7 @@ AS $$
   FROM ski.kata_tx
   WHERE from_sequence IN (SELECT id_sequence FROM relevantseq)
      OR to_sequence   IN (SELECT id_sequence FROM relevantseq);
-$$;
+$Func$;
 
 -- Kihon steps for a given (grade_id, sequence number)
 CREATE OR REPLACE FUNCTION public.get_kihon_steps(_grade_id INT, _sequenza INT)
@@ -663,7 +673,7 @@ RETURNS TABLE (
   technic_name TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT seq.id_sequence,
          seq.inventory_id,
          seq.seq_num,
@@ -685,7 +695,7 @@ AS $$
   WHERE inv.grade_id = _grade_id
     AND inv.number   = _sequenza
   ORDER BY seq.seq_num;
-$$;
+$Func$;
 
 -- Kihon transitions for a given (grade_id, sequence number)
 CREATE OR REPLACE FUNCTION public.get_kihon_tx(_grade_id INT, _sequenza INT)
@@ -699,7 +709,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH relevant_sequences AS (
     SELECT seq.id_sequence
     FROM ski.kihon_sequences AS seq
@@ -719,7 +729,7 @@ AS $$
   WHERE tx.from_sequence IN (SELECT id_sequence FROM relevant_sequences)
      OR tx.to_sequence   IN (SELECT id_sequence FROM relevant_sequences)
   ORDER BY tx.from_sequence;
-$$;
+$Func$;
 
 -- Kihon "formatted list" for a grade
 CREATE OR REPLACE FUNCTION public.kihon_frmlist(_grade_id INT)
@@ -736,7 +746,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT 
     inv.number,
     seq.seq_num,
@@ -760,19 +770,19 @@ AS $$
   WHERE inv.grade_id = _grade_id
     AND seq.seq_num <> 0
   ORDER BY inv.number, seq.seq_num;
-$$;
+$Func$;
 
 -- new func
 
 CREATE OR REPLACE FUNCTION public.get_nkihon(_grade_id INT)
 RETURNS INT
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT MAX(number) AS nkihon
     FROM ski.kihon_inventory
     WHERE grade_id = _grade_id
     GROUP BY grade_id;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_grade(_grade_id INT)
 RETURNS TABLE (
@@ -780,11 +790,11 @@ RETURNS TABLE (
     gtype public.grade_type
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT grade, gtype
     FROM ski.grades
     WHERE id_grade = _grade_id;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_technics()
 RETURNS TABLE (
@@ -796,11 +806,11 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_technic, waza, name, description, notes, resource_url
     FROM ski.technics
     WHERE waza <> '_'::waza_type ;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_stands()
 RETURNS TABLE (
@@ -811,10 +821,10 @@ RETURNS TABLE (
     notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_stand, name, description, illustration_url, notes
     FROM ski.stands;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_targets()
 RETURNS TABLE (
@@ -826,10 +836,10 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_target, name, original_name, description, notes, resource_url
     FROM ski.targets;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_strikingparts()
 RETURNS TABLE (
@@ -841,10 +851,10 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_part, name, translation, description, notes, resource_url
     FROM ski.strikingparts;
-$$;
+$Func$;
 
 
 CREATE OR REPLACE FUNCTION public.get_katainfo(_kata_id INT)
@@ -854,11 +864,11 @@ RETURNS TABLE (
     starting_leg public.sides
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT kata, serie, starting_leg
     FROM ski.kata_inventory
     WHERE id_kata = _kata_id;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.show_gradeinventory()
 RETURNS TABLE (
@@ -867,10 +877,10 @@ RETURNS TABLE (
     id_grade SMALLINT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT grade, gtype, id_grade
     FROM ski.grades;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.show_katainventory()
 RETURNS TABLE (
@@ -882,12 +892,12 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_kata, kata, serie, starting_leg, notes, resource_url
     FROM ski.kata_inventory;
-$$;
+$Func$;
 
-CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
+CREATE OR REPLACE FUNCTION public.get_katabunkais(_kata_id INT)
 RETURNS TABLE (
     id_bunkai SMALLINT,
     kata_id SMALLINT,
@@ -898,26 +908,66 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
     SELECT id_bunkai, kata_id, version, name, description, notes, resource_url
     FROM ski.bunkai_inventory
     WHERE kata_id = _kata_id;
-$$;
+$Func$;
+
+CREATE OR REPLACE FUNCTION public.get_bunkai(_bunkai_id INT)
+RETURNS TABLE (
+  id_bunkaisequence SMALLINT ,
+  bunkai_id SMALLINT ,
+  kata_sequence_id SMALLINT ,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $Func$
+  SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, resource_url
+  FROM ski.bunkai_sequences
+  WHERE bunkai_id = _bunkai_id;
+$Func$;
+
+CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
+RETURNS TABLE (
+  id_bunkaisequence SMALLINT ,
+  bunkai_id SMALLINT ,
+  kata_sequence_id SMALLINT ,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+AS $Func$
+  WITH 
+    bunkai_ids AS (
+      SELECT id_bunkai as bunkai_id
+      FROM ski.bunkai_inventory
+      WHERE kata_id = _kata_id
+    )
+  SELECT base.id_bunkaisequence, base.bunkai_id, base.kata_sequence_id, base.description, base.notes, base.resource_url
+  FROM ski.bunkai_sequences AS base
+  INNER JOIN bunkai_ids
+  ON base.bunkai_id = bunkai_ids.bunkai_id;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
 RETURNS TEXT
 LANGUAGE sql
-AS $$
+AS $Func$
   SELECT notes 
   FROM ski.kihon_inventory
   WHERE grade_id = _gradeid AND number = _num;
-$$;
+$Func$;
+
 
 -- Text search helpers (targets/technics/stands/strikingparts)
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH tsearch AS (
     SELECT id_target AS id,
            ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
@@ -929,12 +979,12 @@ AS $$
   FROM tsearch
   WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH tsearch AS (
     SELECT id_technic AS id,
            ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
@@ -946,12 +996,12 @@ AS $$
   FROM tsearch
   WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH tsearch AS (
     SELECT id_stand AS id,
            ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
@@ -963,12 +1013,12 @@ AS $$
   FROM tsearch
   WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH tsearch AS (
     SELECT id_part AS id,
            ts_rank_cd(tsv_name,        websearch_to_tsquery('simple', _search), 16) AS name_rank,
@@ -980,7 +1030,7 @@ AS $$
   FROM tsearch
   WHERE name_rank > 0 OR description_rank > 0 OR notes_rank > 0
   ORDER BY name_rank DESC, description_rank DESC, notes_rank DESC;
-$$;
+$Func$;
 
 -- Rank normalizer
 CREATE OR REPLACE FUNCTION ski.ts_normalizer(
@@ -993,11 +1043,11 @@ CREATE OR REPLACE FUNCTION ski.ts_normalizer(
 )
 RETURNS FLOAT
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
-AS $$
+AS $Func$
   SELECT coalesce(_name_rank, 0) * _name_wht
        + coalesce(_description_rank, 0) * _description_wht
        + coalesce(_notes_rank, 0) * _notes_wht;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.qry_ts_targets(
   _search TEXT,
@@ -1016,7 +1066,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH ts AS (
     SELECT id,
            ski.ts_normalizer(name_rank, description_rank, notes_rank,
@@ -1030,7 +1080,7 @@ AS $$
   FROM ts
   INNER JOIN ski.targets AS tbl ON ts.id = tbl.id_target
   ORDER BY pertinenza DESC;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.qry_ts_technics(
   _search TEXT,
@@ -1049,7 +1099,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH ts AS (
     SELECT id,
            ski.ts_normalizer(name_rank, description_rank, notes_rank,
@@ -1063,7 +1113,7 @@ AS $$
          tbl.description, tbl.notes, tbl.resource_url
   FROM ts
   INNER JOIN ski.technics AS tbl ON ts.id = tbl.id_technic;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.qry_ts_stands(
   _search TEXT,
@@ -1081,7 +1131,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH ts AS (
     SELECT id,
            ski.ts_normalizer(name_rank, description_rank, notes_rank,
@@ -1095,7 +1145,7 @@ AS $$
          tbl.illustration_url, tbl.notes
   FROM ts
   INNER JOIN ski.stands AS tbl ON ts.id = tbl.id_stand;
-$$;
+$Func$;
 
 CREATE OR REPLACE FUNCTION public.qry_ts_strikingparts(
   _search TEXT,
@@ -1114,7 +1164,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
-AS $$
+AS $Func$
   WITH ts AS (
     SELECT id,
            ski.ts_normalizer(name_rank, description_rank, notes_rank,
@@ -1128,12 +1178,13 @@ AS $$
          tbl.description, tbl.notes, tbl.resource_url
   FROM ts
   INNER JOIN ski.strikingparts AS tbl ON ts.id = tbl.id_part;
-$$;
+$Func$;
 
 
 
 -- =============================================================
 -- Staging/Upsert/Reject tables
+-- This section defines tables for staging, upsert, and reject mechanisms.
 -- =============================================================
 
 -- ---------- Staging ----------
@@ -1644,6 +1695,7 @@ CREATE TABLE reject.kata_tx(
 );
 -- =============================================================
 -- Views (staging domain unions so keys are visible for ETL)
+-- This section creates views for staging domain unions.
 -- =============================================================
 CREATE VIEW staging.dom_targets AS
   SELECT id_target FROM ski.targets
@@ -1709,7 +1761,7 @@ CREATE VIEW staging.dom_kata_tx AS
 CREATE OR REPLACE FUNCTION staging.trigfunc_ins_technics()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
-  AS $$
+  AS $Func$
     DECLARE
     seq_adj integer;
     tms_op timestamp;
@@ -1812,7 +1864,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_technics()
 
     RETURN NULL;
     END;
-  $$
+  $Func$
 ;
 
 -- Targets
@@ -1820,7 +1872,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_targets()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -1902,7 +1954,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_targets()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Strikingparts
@@ -1910,7 +1962,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_strikingparts()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -1992,7 +2044,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_strikingparts()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Stands
@@ -2000,7 +2052,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_stands()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2080,7 +2132,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_stands()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Grades
@@ -2088,7 +2140,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_grades()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2166,7 +2218,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_grades()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kihon Inventory
@@ -2174,7 +2226,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_inventory()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2252,7 +2304,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_inventory()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kihon Sequences
@@ -2260,7 +2312,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2346,7 +2398,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_sequences()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kihon TX
@@ -2354,7 +2406,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_tx()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2436,7 +2488,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kihon_tx()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kata Inventory
@@ -2444,7 +2496,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_inventory()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2524,7 +2576,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_inventory()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kata Sequences
@@ -2532,7 +2584,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequences()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2622,7 +2674,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequences()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kata Sequence Waza
@@ -2631,7 +2683,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequence_waza()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2720,7 +2772,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_sequence_waza()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 -- Kata TX
@@ -2728,7 +2780,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
   RETURNS TRIGGER
   LANGUAGE PLPGSQL VOLATILE
   AS
-  $$
+  $Func$
   DECLARE
   seq_adj integer;
   tms_op timestamp;
@@ -2825,7 +2877,7 @@ CREATE OR REPLACE FUNCTION staging.trigfunc_ins_kata_tx()
 
     RETURN NULL;
   END;
-  $$
+  $Func$
 ;
 
 --DROP TRIGGER IF EXISTS trigger_technics ON staging.technics;
@@ -3097,13 +3149,15 @@ CREATE TABLE bkp.kata_tx (
 )
 ;
 
-CREATE  OR REPLACE PROCEDURE ski.bkp()
+-- =============================================================
+-- Backup Procedure
+-- This section defines a procedure for backing up data from the `ski` schema.
+-- =============================================================
+CREATE OR REPLACE PROCEDURE ski.bkp()
     LANGUAGE PLPGSQL
     AS $proc$
-    DECLARE
-    tms_op timestamp;
     BEGIN
-    SELECT INTO tms_op date_trunc('minute', CURRENT_TIMESTAMP);
+        SELECT INTO tms_op date_trunc('minute', CURRENT_TIMESTAMP);
     INSERT INTO bkp.targets (
         bkp  ,
         id_target ,
