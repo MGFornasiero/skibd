@@ -47,6 +47,7 @@ DROP TYPE IF EXISTS kata_series CASCADE;
 DROP TYPE IF EXISTS movements CASCADE;
 DROP TYPE IF EXISTS sides CASCADE;
 DROP TYPE IF EXISTS grade_type CASCADE;
+DROP TYPE IF EXISTS detailednotes CASCADE;
 
 
 DO $Clean$
@@ -150,6 +151,14 @@ CREATE TYPE public.beltcolor AS ENUM ('bianco','giallo','arancio','verde','blu',
 -- Absolute directions
 CREATE TYPE public.absolute_directions AS ENUM ('N','NE','E','SE','S','SO','O','NO');
 
+-- Detailed notes !NON usato!
+CREATE TYPE public.detailednotes AS (
+  arto public.arti ,
+  description TEXT ,
+  explatation TEXT ,
+  note TEXT
+);
+ 
 
 -- =============================================================
 -- Sequences (kept in `ski`)
@@ -160,6 +169,7 @@ CREATE SEQUENCE ski.seq_id_part    AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_technic AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_stand   AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_grade   AS SMALLINT;
+CREATE SEQUENCE ski.seq_id_technicdecomposition AS SMALLINT;
 
 CREATE SEQUENCE ski.seq_kihon_id_inventory AS SMALLINT;
 CREATE SEQUENCE ski.seq_kihon_id_sequence  AS SMALLINT;
@@ -228,6 +238,24 @@ CREATE TABLE ski.technics (
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_technics_name UNIQUE (name)
+);
+
+-- -------------------------------------------------------------
+-- Table: ski.technics_decomposition
+-- Explanation of techniques into components (if needed).
+-- -------------------------------------------------------------
+
+CREATE TABLE ski.technics_decomposition (
+  id_decomposition SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technicdecomposition'),
+  technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  component_order SMALLINT NOT NULL,
+  description TEXT,
+  explatations TEXT, 
+  notes TEXT,
+  resource_url TEXT,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT unique_technics_decomposition UNIQUE (technic_id, component_order)
 );
 
 -- -------------------------------------------------------------
@@ -326,6 +354,8 @@ CREATE TABLE ski.kata_inventory (
   serie        public.kata_series,
   starting_leg public.sides NOT NULL,
   notes        TEXT,
+  remarks public.detailednotes[],
+  resources      JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
   CONSTRAINT unique_kata_inventory_kata UNIQUE (kata)
 );
@@ -345,8 +375,12 @@ CREATE TABLE ski.kata_sequence (
   facing    public.absolute_directions,
   kiai      BOOLEAN,
   notes     TEXT,
+  remarks   public.detailednotes[],
+  resources   JSONB DEFAULT '[]'::jsonb,
   resource_url TEXT,
-  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
+    coalesce(notes, '') 
+  )) STORED,
   CONSTRAINT unique_kata_sequence UNIQUE (kata_id, seq_num)
 );
 
@@ -362,7 +396,11 @@ CREATE TABLE ski.kata_sequence_waza (
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
   notes             TEXT,
-  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED
+  remarks         public.detailednotes[],
+  resources           JSONB DEFAULT '[]'::jsonb ,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
+    coalesce(notes, '') 
+  )) STORED
 );
 
 -- -------------------------------------------------------------
@@ -376,9 +414,14 @@ CREATE TABLE ski.kata_tx (
   tempo public.tempo,
   direction public.sides,
   intermediate_stand_id SMALLINT REFERENCES ski.stands(id_stand),
+  --mettere qualcosa 
   notes TEXT,
+  remarks public.detailednotes[],
+  resources   JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
-  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
+    coalesce(notes, '') 
+  )) STORED,
   CONSTRAINT unique_kata_tx UNIQUE (from_sequence, to_sequence)
 );
 
@@ -395,6 +438,8 @@ CREATE TABLE ski.bunkai_inventory (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources   JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
 );
@@ -3156,6 +3201,8 @@ CREATE TABLE bkp.kata_tx (
 CREATE OR REPLACE PROCEDURE ski.bkp()
     LANGUAGE PLPGSQL
     AS $proc$
+    DECLARE
+      tms_op TIMESTAMP;
     BEGIN
         SELECT INTO tms_op date_trunc('minute', CURRENT_TIMESTAMP);
     INSERT INTO bkp.targets (
