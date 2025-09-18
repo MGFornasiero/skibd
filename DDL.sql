@@ -627,7 +627,10 @@ RETURNS TABLE (
   Tecniche JSON,
   embusen public.embusen_points,
   kiai BOOLEAN,
-  notes TEXT
+  notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT
 )
 LANGUAGE sql
 AS $Func$
@@ -646,12 +649,17 @@ AS $Func$
              'Tecnica', combo.technic_name,
              'technic_target_id', combo.technic_target_id,
              'Obiettivo', combo.target_name,
-             'waza_note', combo.waza_note
+             'waza_note', combo.waza_note,
+             'waza_remarks', combo.waza_remarks,
+             'waza_resources', combo.waza_resources
            )
          ) AS Tecniche,
          seq.embusen,
          seq.kiai,
-         seq.notes
+         seq.notes,
+         seq.remarks,
+         seq.resources,
+         seq.resource_url
   FROM ski.kata_sequence AS seq
   JOIN (
     SELECT combo_raw.id_kswaza,
@@ -662,7 +670,9 @@ AS $Func$
            combo_raw.notes,
            tech.name AS technic_name,
            targets.name AS target_name,
-           combo_raw.notes AS waza_note
+           combo_raw.notes AS waza_note,
+           combo_raw.remarks AS waza_remarks,
+           combo_raw.resources AS waza_resources
     FROM ski.kata_sequence_waza AS combo_raw
     JOIN ski.technics AS tech
       ON combo_raw.technic_id = tech.id_technic
@@ -685,7 +695,10 @@ RETURNS TABLE (
   to_sequence SMALLINT,
   tempo public.tempo,
   direction public.sides,
-  notes TEXT
+  notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT
 )
 LANGUAGE sql
 AS $Func$
@@ -697,7 +710,10 @@ AS $Func$
          to_sequence,
          tempo,
          direction,
-         notes
+         notes,
+         remarks,
+         resources,
+         resource_url
   FROM ski.kata_tx
   WHERE from_sequence IN (SELECT id_sequence FROM relevantseq)
      OR to_sequence   IN (SELECT id_sequence FROM relevantseq);
@@ -907,11 +923,15 @@ CREATE OR REPLACE FUNCTION public.get_katainfo(_kata_id INT)
 RETURNS TABLE (
     kata VARCHAR,
     serie public.kata_series,
-    starting_leg public.sides
+    starting_leg public.sides,
+    notes TEXT,
+    remarks public.detailednotes[],
+    resources JSONB,
+    resource_url TEXT
 )
 LANGUAGE sql
 AS $Func$
-    SELECT kata, serie, starting_leg
+    SELECT kata, serie, starting_leg, notes, remarks, resources, resource_url
     FROM ski.kata_inventory
     WHERE id_kata = _kata_id;
 $Func$;
@@ -935,11 +955,13 @@ RETURNS TABLE (
     serie public.kata_series,
     starting_leg public.sides,
     notes TEXT,
+    remarks public.detailednotes[],
+    resources JSONB,
     resource_url TEXT
 )
 LANGUAGE sql
 AS $Func$
-    SELECT id_kata, kata, serie, starting_leg, notes, resource_url
+    SELECT id_kata, kata, serie, starting_leg, notes, remarks, resources, resource_url
     FROM ski.kata_inventory;
 $Func$;
 
