@@ -514,6 +514,7 @@ CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
 -- =============================================================
 -- Functions 
 -- This section defines functions for retrieving and manipulating data.
+-- tabelle con remarks & resources: ski.kata_inventory ski.kata_sequence ski.kata_sequence_waza ski.kata_tx
 -- =============================================================
 
 -- Return the id_grade for (grade, type)
