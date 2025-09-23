@@ -397,7 +397,7 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
   notes             TEXT,
   remarks         public.detailednotes[],
-  resources           JSONB DEFAULT '[]'::jsonb ,
+  resources           JSONB, --DEFAULT '[]'::jsonb ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED
