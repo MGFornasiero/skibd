@@ -453,18 +453,20 @@ CREATE TABLE ski.bunkai_inventory (
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
 );
 
+
 CREATE TABLE ski.bunkai_sequences (
   id_bunkaisequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_bunkai_id_sequence'),
   bunkai_id SMALLINT NOT NULL REFERENCES ski.bunkai_inventory(id_bunkai),
   kata_sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
   description TEXT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources   JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_bunkai_sequence UNIQUE (bunkai_id, kata_sequence_id)
 );
-
 
 
 -- =============================================================
