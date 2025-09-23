@@ -48,6 +48,8 @@ DROP TYPE IF EXISTS movements CASCADE;
 DROP TYPE IF EXISTS sides CASCADE;
 DROP TYPE IF EXISTS grade_type CASCADE;
 DROP TYPE IF EXISTS detailednotes CASCADE;
+DROP TYPE IF EXISTS public.hips CASCADE;
+
 
 
 DO $Clean$
@@ -72,7 +74,7 @@ END $Clean$;
 -- This section creates a read-only role `student` and grants
 -- appropriate permissions for accessing the database.
 -- =============================================================
-CREATE ROLE student ; -- WITH LOGIN PASSWORD 'Password'
+CREATE ROLE student WITH LOGIN PASSWORD 'Password'; -- Cambiare password in produzione
 
 REVOKE ALL ON DATABASE postgres FROM student;
 
@@ -144,6 +146,8 @@ CREATE TYPE public.arti AS ENUM (
   'Gamba DX',   'Gamba SX',   'Gambe',
   'NA'
 );
+
+CREATE TYPE public.hips AS ENUM ('Hanmi', 'Shomen');
 
 -- Belt colors
 CREATE TYPE public.beltcolor AS ENUM ('bianco','giallo','arancio','verde','blu','marrone','nero');
@@ -258,6 +262,9 @@ CREATE TABLE ski.technics_decomposition (
   CONSTRAINT unique_technics_decomposition UNIQUE (technic_id, component_order)
 );
 
+
+
+
 -- -------------------------------------------------------------
 -- Table: ski.stands
 -- Inventory of stances/positions.
@@ -315,6 +322,7 @@ CREATE TABLE ski.kihon_sequences (
   seq_num      SMALLINT NOT NULL,
   stand_id     SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
   technic_id   SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  hips         public.hips,
   gyaku        BOOLEAN,
   target_hgt   public.target_hgt,
   notes        TEXT,
@@ -371,6 +379,7 @@ CREATE TABLE ski.kata_sequence (
   stand_id  SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
   speed     public.tempo,
   side      public.sides,
+  hips      public.hips,
   embusen   public.embusen_points,
   facing    public.absolute_directions,
   kiai      BOOLEAN,
@@ -444,17 +453,21 @@ CREATE TABLE ski.bunkai_inventory (
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
 );
 
+
 CREATE TABLE ski.bunkai_sequences (
   id_bunkaisequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_bunkai_id_sequence'),
   bunkai_id SMALLINT NOT NULL REFERENCES ski.bunkai_inventory(id_bunkai),
   kata_sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
   description TEXT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources   JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_bunkai_sequence UNIQUE (bunkai_id, kata_sequence_id)
 );
+
 
 -- =============================================================
 -- Indexes (FTS + Join helpers)
@@ -521,6 +534,7 @@ CREATE INDEX idx_kata_sequence_facing ON ski.kata_sequence(facing);
 CREATE OR REPLACE FUNCTION public.get_gradeid(_grade INT, _type VARCHAR)
 RETURNS SMALLINT
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_grade
   FROM ski.grades
@@ -532,6 +546,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION public.get_kihons(_grade INT, _type VARCHAR)
 RETURNS TABLE(id_inventory INT, grade_id INT, number INT , notes TEXT)
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_inventory, grade_id, number , notes
   FROM ski.kihon_inventory
@@ -542,6 +557,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION public.get_kihonid(_gradeid INT, _num INT)
 RETURNS INT
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_inventory FROM ski.kihon_inventory
   WHERE grade_id = _gradeid AND number = _num;
@@ -558,6 +574,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_technic, waza, name, description, notes, resource_url
   FROM ski.technics
@@ -574,6 +591,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_stand, name, description, illustration_url, notes
   FROM ski.stands
@@ -591,6 +609,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_part, name, translation, description, notes, resource_url
   FROM ski.strikingparts
@@ -608,6 +627,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_target, name, original_name, description, notes, resource_url
   FROM ski.targets
@@ -633,6 +653,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT seq.id_sequence,
          seq.kata_id,
@@ -701,6 +722,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH relevantseq AS (
     SELECT id_sequence FROM ski.kata_sequence WHERE kata_id = _kata_id
@@ -735,6 +757,7 @@ RETURNS TABLE (
   technic_name TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT seq.id_sequence,
          seq.inventory_id,
@@ -771,6 +794,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH relevant_sequences AS (
     SELECT seq.id_sequence
@@ -808,6 +832,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT 
     inv.number,
@@ -839,6 +864,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION public.get_nkihon(_grade_id INT)
 RETURNS INT
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT MAX(number) AS nkihon
     FROM ski.kihon_inventory
@@ -852,6 +878,7 @@ RETURNS TABLE (
     gtype public.grade_type
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT grade, gtype
     FROM ski.grades
@@ -868,6 +895,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_technic, waza, name, description, notes, resource_url
     FROM ski.technics
@@ -883,6 +911,7 @@ RETURNS TABLE (
     notes TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_stand, name, description, illustration_url, notes
     FROM ski.stands;
@@ -898,6 +927,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_target, name, original_name, description, notes, resource_url
     FROM ski.targets;
@@ -913,6 +943,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_part, name, translation, description, notes, resource_url
     FROM ski.strikingparts;
@@ -930,6 +961,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT kata, serie, starting_leg, notes, remarks, resources, resource_url
     FROM ski.kata_inventory
@@ -943,6 +975,7 @@ RETURNS TABLE (
     id_grade SMALLINT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT grade, gtype, id_grade
     FROM ski.grades;
@@ -960,6 +993,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_kata, kata, serie, starting_leg, notes, remarks, resources, resource_url
     FROM ski.kata_inventory;
@@ -976,6 +1010,7 @@ RETURNS TABLE (
     resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
     SELECT id_bunkai, kata_id, version, name, description, notes, resource_url
     FROM ski.bunkai_inventory
@@ -992,11 +1027,13 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, resource_url
   FROM ski.bunkai_sequences
   WHERE bunkai_id = _bunkai_id;
 $Func$;
+
 
 CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
 RETURNS TABLE (
@@ -1008,6 +1045,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH 
     bunkai_ids AS (
@@ -1024,10 +1062,40 @@ $Func$;
 CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
 RETURNS TEXT
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   SELECT notes 
   FROM ski.kihon_inventory
   WHERE grade_id = _gradeid AND number = _num;
+$Func$;
+
+CREATE FUNCTION public.get_bunkai_sequence(_bunkai_id INT)
+RETURNS TABLE (
+  id_bunkaisequence SMALLINT,
+  bunkai_id SMALLINT,
+  kata_sequence_id SMALLINT,
+  description TEXT,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+    SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, resource_url
+    FROM ski.bunkai_sequences
+    WHERE bunkai_id = _bunkai_id
+    ORDER BY kata_sequence_id;
+$Func$;
+
+CREATE FUNCTION public.get_bunkainum(_kata_id INT)
+RETURNS INT
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+    SELECT COUNT(*) AS nbunkai
+    FROM ski.bunkai_inventory
+    WHERE kata_id = _kata_id
+    GROUP BY kata_id;
 $Func$;
 
 
@@ -1035,6 +1103,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH tsearch AS (
     SELECT id_target AS id,
@@ -1052,6 +1121,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION ski.get_ts_technics(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH tsearch AS (
     SELECT id_technic AS id,
@@ -1069,6 +1139,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION ski.get_ts_stands(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH tsearch AS (
     SELECT id_stand AS id,
@@ -1086,6 +1157,7 @@ $Func$;
 CREATE OR REPLACE FUNCTION ski.get_ts_strikingparts(_search TEXT)
 RETURNS TABLE(id SMALLINT, name_rank FLOAT, description_rank FLOAT, notes_rank FLOAT)
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH tsearch AS (
     SELECT id_part AS id,
@@ -1110,7 +1182,9 @@ CREATE OR REPLACE FUNCTION ski.ts_normalizer(
   _notes_wht FLOAT DEFAULT 0.25
 )
 RETURNS FLOAT
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
+LANGUAGE sql 
+SECURITY DEFINER
+IMMUTABLE PARALLEL SAFE
 AS $Func$
   SELECT coalesce(_name_rank, 0) * _name_wht
        + coalesce(_description_rank, 0) * _description_wht
@@ -1134,6 +1208,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH ts AS (
     SELECT id,
@@ -1167,6 +1242,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH ts AS (
     SELECT id,
@@ -1199,6 +1275,7 @@ RETURNS TABLE (
   notes TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH ts AS (
     SELECT id,
@@ -1232,6 +1309,7 @@ RETURNS TABLE (
   resource_url TEXT
 )
 LANGUAGE sql
+SECURITY DEFINER
 AS $Func$
   WITH ts AS (
     SELECT id,
@@ -1246,6 +1324,27 @@ AS $Func$
          tbl.description, tbl.notes, tbl.resource_url
   FROM ts
   INNER JOIN ski.strikingparts AS tbl ON ts.id = tbl.id_part;
+$Func$;
+
+-- 
+
+CREATE FUNCTION public.get_technicdecomposition(_technic_id INT)
+RETURNS TABLE (
+  id_decomposition SMALLINT,
+  technic_id SMALLINT,
+  component_order SMALLINT,
+  description TEXT,
+  explatations TEXT, 
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+  SELECT id_decomposition, technic_id, component_order, description, explatations, notes, resource_url
+  FROM ski.technics_decomposition
+  WHERE technic_id = _technic_id
+  ORDER BY component_order;
 $Func$;
 
 
