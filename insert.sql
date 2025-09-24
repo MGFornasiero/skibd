@@ -1065,16 +1065,10 @@ VALUES
     ( 1 , 1 , 2 , $$Para avversario dll' interno$$ , NULL , NULL , NULL , NULL ),
     ( 2 , 1 , 3 , $$Tsuki alla bocca dello stomaco$$ , NULL , NULL , NULL , NULL ),
     ( 3 , 2 , 31 , $$Parata$$ , NULL , NULL , NULL , NULL ),
-    ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , [
-('Braccio SX', $description$Parata$description$, $explatation$Uchi uke lascia passare l'attacco$explanation$, $note$Parata da un attacco$note$),
-( 'Braccio DX', $description$Offesa$description$,  $explatation$Passando dall' interno colpisce l'avversario$explanation$, $note$Attacco$note$)
-] , NULL , NULL ),
+    ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , ARRAY[
+        ROW('Braccio SX', $$Parata$$, $$Uchi uke lascia passare l'attacco$$, $$Parata da un attacco$$)::public.detailednotes,
+        ROW('Braccio DX', $$Offesa$$, $$Passando dall'' interno colpisce l''avversario$$, $$Attacco$$)::public.detailednotes
+    ] , NULL , NULL ),
     ( 5 , 2 , 33 , $$Attacco$$ , NULL , NULL , NULL , NULL )
 ;
 --(1,1,1, 'Bunkai for step 1 of Heian Shodan', 'Initial bunkai step', '{}', '[]', NULL)
-
-
-
-
-
-
