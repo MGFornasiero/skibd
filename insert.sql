@@ -1052,10 +1052,10 @@ INSERT INTO ski.kata_tx(
 
 
 INSERT 
-INTO ski.bunkai_inventory (id_bunkai, kata_id, version, name, description, notes, remarks, resources, resource_url)
+INTO ski.bunkai_inventory (id_bunkai, kata_id, version, name, description, notes, resources, resource_url)
 VALUES 
-    ( 1 , 1 , 1 , $$applicazione Shodan$$ , $$Primo esempio applicativo$$ , $$Bunkai di esempio$$ , NULL , NULL , NULL ),
-    ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , NULL , NULL , NULL )
+    ( 1 , 1 , 1 , $$applicazione Shodan$$ , $$Primo esempio applicativo$$ , $$Bunkai di esempio$$ , NULL , NULL ),
+    ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , NULL , NULL )
 ;
 --(1,1, 1, 'Bunkai Heian Shodan v1', 'Bunkai for Heian Shodan version 1', 'Initial version', '{}', '[]', NULL)
 
@@ -1065,14 +1065,13 @@ VALUES
     ( 1 , 1 , 2 , $$Para avversario dll' interno$$ , NULL , NULL , NULL , NULL ),
     ( 2 , 1 , 3 , $$Tsuki alla bocca dello stomaco$$ , NULL , NULL , NULL , NULL ),
     ( 3 , 2 , 31 , $$Parata$$ , NULL , NULL , NULL , NULL ),
-    ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , NULL , NULL , NULL ),
+    ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , [
+('Braccio SX', $description$Parata$description$, $explatation$Uchi uke lascia passare l'attacco$explanation$, $note$Parata da un attacco$note$),
+( 'Braccio DX', $description$Offesa$description$,  $explatation$Passando dall' interno colpisce l'avversario$explanation$, $note$Attacco$note$)
+] , NULL , NULL ),
     ( 5 , 2 , 33 , $$Attacco$$ , NULL , NULL , NULL , NULL )
 ;
 --(1,1,1, 'Bunkai for step 1 of Heian Shodan', 'Initial bunkai step', '{}', '[]', NULL)
-
-
-
-
 
 
 

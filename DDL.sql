@@ -447,7 +447,6 @@ CREATE TABLE ski.bunkai_inventory (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   notes TEXT,
-  remarks public.detailednotes[],
   resources   JSONB DEFAULT '[]'::jsonb ,
   resource_url TEXT,
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
