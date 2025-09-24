@@ -1006,15 +1006,17 @@ RETURNS TABLE (
     name VARCHAR,
     description TEXT,
     notes TEXT,
+    resources JSONB,
     resource_url TEXT
 )
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-    SELECT id_bunkai, kata_id, version, name, description, notes, resource_url
+    SELECT id_bunkai, kata_id, version, name, description, notes, resources, resource_url
     FROM ski.bunkai_inventory
     WHERE kata_id = _kata_id;
 $Func$;
+
 
 CREATE OR REPLACE FUNCTION public.get_bunkai(_bunkai_id INT)
 RETURNS TABLE (
@@ -1023,12 +1025,14 @@ RETURNS TABLE (
   kata_sequence_id SMALLINT ,
   description TEXT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT
 )
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-  SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, resource_url
+  SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, remarks, resources, resource_url
   FROM ski.bunkai_sequences
   WHERE bunkai_id = _bunkai_id;
 $Func$;
@@ -1038,9 +1042,12 @@ CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
 RETURNS TABLE (
   id_bunkaisequence SMALLINT ,
   bunkai_id SMALLINT ,
+  version SMALLINT ,
   kata_sequence_id SMALLINT ,
   description TEXT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT
 )
 LANGUAGE sql
@@ -1048,11 +1055,11 @@ SECURITY DEFINER
 AS $Func$
   WITH 
     bunkai_ids AS (
-      SELECT id_bunkai as bunkai_id
+      SELECT id_bunkai as bunkai_id, version
       FROM ski.bunkai_inventory
       WHERE kata_id = _kata_id
     )
-  SELECT base.id_bunkaisequence, base.bunkai_id, base.kata_sequence_id, base.description, base.notes, base.resource_url
+  SELECT base.id_bunkaisequence, base.bunkai_id,bunkai_ids.version, base.kata_sequence_id, base.description, base.notes, base.remarks, base.resources, base.resource_url
   FROM ski.bunkai_sequences AS base
   INNER JOIN bunkai_ids
   ON base.bunkai_id = bunkai_ids.bunkai_id;
