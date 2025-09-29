@@ -468,6 +468,62 @@ CREATE TABLE ski.bunkai_sequences (
 );
 
 
+-- estrattore tabella kata
+SELECT ks.id_sequence,
+ks.kata_id,
+ks.seq_num,
+ks.stand_id,
+stand.name as stand_name,
+ks.speed,
+ks.side, 
+ks.hips,
+ks.embusen,
+ks.facing, 
+ks.kiai,
+ks.notes,
+
+json_agg(
+  json_build_object(
+    'sequence_id', combo.sequence_id,
+    'arto', combo.arto,
+    'technic_id', combo.technic_id,
+    'Tecnica', combo.technic_name,
+    'technic_target_id', combo.technic_target_id,
+    'Obiettivo', combo.target_name,
+    'waza_note', combo.waza_note,
+    'waza_remarks', combo.waza_remarks,
+    'waza_resources', combo.waza_resources
+  )
+) AS Tecniche
+
+FROM ski.kata_sequence AS ks
+
+LEFT JOIN ski.stands AS stand
+ON stand.id_stand = ks.stand_id
+
+JOIN (
+  SELECT combo_raw.id_kswaza,
+          combo_raw.sequence_id,
+          combo_raw.arto,
+          combo_raw.technic_id,
+          combo_raw.technic_target_id,
+          combo_raw.notes,
+          tech.name AS technic_name,
+          targets.name AS target_name,
+          combo_raw.notes AS waza_note,
+          combo_raw.remarks AS waza_remarks,
+          combo_raw.resources AS waza_resources
+  FROM ski.kata_sequence_waza AS combo_raw
+  JOIN ski.technics AS tech
+    ON combo_raw.technic_id = tech.id_technic
+  LEFT JOIN ski.targets AS targets
+    ON combo_raw.technic_target_id = targets.id_target
+) AS combo
+  ON ks.id_sequence = combo.sequence_id
+GROUP BY ks.id_sequence
+;
+
+
 -- =============================================================
 -- Indexes (FTS + Join helpers)
 -- This section creates indexes for full-text search and join optimization.
@@ -998,6 +1054,28 @@ AS $Func$
     FROM ski.kata_inventory;
 $Func$;
 
+
+CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+  SELECT notes 
+  FROM ski.kihon_inventory
+  WHERE grade_id = _gradeid AND number = _num;
+$Func$;
+
+CREATE FUNCTION public.get_bunkainum(_kata_id INT)
+RETURNS INT
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+    SELECT COUNT(*) AS nbunkai
+    FROM ski.bunkai_inventory
+    WHERE kata_id = _kata_id
+    GROUP BY kata_id;
+$Func$;
+
 CREATE OR REPLACE FUNCTION public.get_katabunkais(_kata_id INT)
 RETURNS TABLE (
     id_bunkai SMALLINT,
@@ -1064,46 +1142,6 @@ AS $Func$
   INNER JOIN bunkai_ids
   ON base.bunkai_id = bunkai_ids.bunkai_id;
 $Func$;
-
-CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
-RETURNS TEXT
-LANGUAGE sql
-SECURITY DEFINER
-AS $Func$
-  SELECT notes 
-  FROM ski.kihon_inventory
-  WHERE grade_id = _gradeid AND number = _num;
-$Func$;
-
-CREATE FUNCTION public.get_bunkai_sequence(_bunkai_id INT)
-RETURNS TABLE (
-  id_bunkaisequence SMALLINT,
-  bunkai_id SMALLINT,
-  kata_sequence_id SMALLINT,
-  description TEXT,
-  notes TEXT,
-  resource_url TEXT
-)
-LANGUAGE sql
-SECURITY DEFINER
-AS $Func$
-    SELECT id_bunkaisequence, bunkai_id, kata_sequence_id, description, notes, resource_url
-    FROM ski.bunkai_sequences
-    WHERE bunkai_id = _bunkai_id
-    ORDER BY kata_sequence_id;
-$Func$;
-
-CREATE FUNCTION public.get_bunkainum(_kata_id INT)
-RETURNS INT
-LANGUAGE sql
-SECURITY DEFINER
-AS $Func$
-    SELECT COUNT(*) AS nbunkai
-    FROM ski.bunkai_inventory
-    WHERE kata_id = _kata_id
-    GROUP BY kata_id;
-$Func$;
-
 
 -- Text search helpers (targets/technics/stands/strikingparts)
 CREATE OR REPLACE FUNCTION ski.get_ts_targets(_search TEXT)
