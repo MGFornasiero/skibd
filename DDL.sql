@@ -468,62 +468,6 @@ CREATE TABLE ski.bunkai_sequences (
 );
 
 
--- estrattore tabella kata
-SELECT ks.id_sequence,
-ks.kata_id,
-ks.seq_num,
-ks.stand_id,
-stand.name as stand_name,
-ks.speed,
-ks.side, 
-ks.hips,
-ks.embusen,
-ks.facing, 
-ks.kiai,
-ks.notes,
-
-json_agg(
-  json_build_object(
-    'sequence_id', combo.sequence_id,
-    'arto', combo.arto,
-    'technic_id', combo.technic_id,
-    'Tecnica', combo.technic_name,
-    'technic_target_id', combo.technic_target_id,
-    'Obiettivo', combo.target_name,
-    'waza_note', combo.waza_note,
-    'waza_remarks', combo.waza_remarks,
-    'waza_resources', combo.waza_resources
-  )
-) AS Tecniche
-
-FROM ski.kata_sequence AS ks
-
-LEFT JOIN ski.stands AS stand
-ON stand.id_stand = ks.stand_id
-
-JOIN (
-  SELECT combo_raw.id_kswaza,
-          combo_raw.sequence_id,
-          combo_raw.arto,
-          combo_raw.technic_id,
-          combo_raw.technic_target_id,
-          combo_raw.notes,
-          tech.name AS technic_name,
-          targets.name AS target_name,
-          combo_raw.notes AS waza_note,
-          combo_raw.remarks AS waza_remarks,
-          combo_raw.resources AS waza_resources
-  FROM ski.kata_sequence_waza AS combo_raw
-  JOIN ski.technics AS tech
-    ON combo_raw.technic_id = tech.id_technic
-  LEFT JOIN ski.targets AS targets
-    ON combo_raw.technic_target_id = targets.id_target
-) AS combo
-  ON ks.id_sequence = combo.sequence_id
-GROUP BY ks.id_sequence
-;
-
-
 -- =============================================================
 -- Indexes (FTS + Join helpers)
 -- This section creates indexes for full-text search and join optimization.
@@ -1391,6 +1335,76 @@ AS $Func$
   ORDER BY component_order;
 $Func$;
 
+CREATE FUNCTION public.info_kata(_kata_id INT)
+RETURNS TABLE (
+  id_sequence SMALLINT,
+  kata_id SMALLINT,
+  seq_num SMALLINT,
+  stand_id SMALLINT,
+  stand_name TEXT,
+  speed public.speed_type,
+  side public.sides,
+  hips public.hips_type,
+  embusen public.embusen_points,
+  facing public.absolute_directions,
+  kiai BOOLEAN,
+  notes TEXT,
+  Tecniche JSON
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+SELECT ks.id_sequence,
+ks.kata_id,
+ks.seq_num,
+ks.stand_id,
+stand.name as stand_name,
+ks.speed,
+ks.side, 
+ks.hips,
+ks.embusen,
+ks.facing, 
+ks.kiai,
+ks.notes,
+json_agg(
+  json_build_object(
+    'sequence_id', combo.sequence_id,
+    'arto', combo.arto,
+    'technic_id', combo.technic_id,
+    'Tecnica', combo.technic_name,
+    'technic_target_id', combo.technic_target_id,
+    'Obiettivo', combo.target_name,
+    'waza_note', combo.waza_note,
+    'waza_remarks', combo.waza_remarks,
+    'waza_resources', combo.waza_resources
+  )
+) AS Tecniche
+FROM ski.kata_sequence AS ks
+LEFT JOIN ski.stands AS stand
+ON stand.id_stand = ks.stand_id
+JOIN (
+  SELECT combo_raw.id_kswaza,
+          combo_raw.sequence_id,
+          combo_raw.arto,
+          combo_raw.technic_id,
+          combo_raw.technic_target_id,
+          combo_raw.notes,
+          tech.name AS technic_name,
+          targets.name AS target_name,
+          combo_raw.notes AS waza_note,
+          combo_raw.remarks AS waza_remarks,
+          combo_raw.resources AS waza_resources
+  FROM ski.kata_sequence_waza AS combo_raw
+  JOIN ski.technics AS tech
+    ON combo_raw.technic_id = tech.id_technic
+  LEFT JOIN ski.targets AS targets
+    ON combo_raw.technic_target_id = targets.id_target
+) AS combo
+  ON ks.id_sequence = combo.sequence_id
+WHERE ks.kata_id = _kata_id
+GROUP BY ks.id_sequence
+;
+$$;
 
 
 -- =============================================================
