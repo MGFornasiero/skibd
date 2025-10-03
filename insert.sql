@@ -10,37 +10,37 @@ INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes ) VAL
     ( 9 , 'Torace' ,$$Mune$$ ,NULL ,NULL )
 ;
 
-INSERT INTO ski.strikingparts( id_part ,name ,translation ,description ) VALUES 
-    ( 1 , 'Seiken' ,NULL ,$$Nocche indice e medio$$ ),
-    ( 2 , 'Koshi' ,NULL ,$$Radice delle dita dei piedi con dita alzate$$ ),
-    ( 3 , 'Empi' ,$$Gomito$$ ,$$Gomito$$ ),
-    ( 4 , 'Hirabasami' ,NULL ,$$incavo mano pollice indice$$ ),
-    ( 5 , 'Kumade' ,NULL ,$$palmo della mano$$ ),
-    ( 6 , 'Teisho' ,NULL ,$$palmo della mano all' attaccatura con l'avambraccio$$ ),
-    ( 7 , 'Gaiwan' ,NULL ,$$Avambraccio dal lato esterno / ulna$$ ),
-    ( 8 , 'Naiwan' ,NULL ,$$Avambraccio dal lato interno / radio$$ ),
-    ( 9 , 'Haiwan' ,NULL ,$$Avambraccio lato superiore$$ ),
-    ( 10 , 'Huraken' ,NULL ,$$Esterno della mano$$ ),
-    ( 11 , 'Keito' ,NULL ,$$Radice del police$$ ),
-    ( 12 , 'Kakuto' ,NULL ,$$polso esterno$$ ),
-    ( 13 , 'Tetsui' ,NULL ,$$parte bassa del pungo$$ ),
-    ( 14 , 'Washide' ,NULL ,$$Punta delle dita unite come a raccogliere$$ ),
-    ( 15 , 'Nakadaka Ken' ,NULL ,$$Medio leggermente fuoriuscito dal pugno$$ ),
-    ( 16 , 'Ippon Ken' ,NULL ,$$Indice leggermente fuoriuscito dal pugno$$ ),
-    ( 17 , 'Hihon Nukite' ,NULL ,$$Punta di indice e medio protesi$$ ),
-    ( 18 , 'Hiraken' ,NULL ,$$Falange intermedia della mano$$ ),
-    ( 19 , 'Ippon Nukite' ,NULL ,$$Punta dell'indice proteso$$ ),
-    ( 20 , 'Haito' ,NULL ,$$esterno della falange del pollice$$ ),
-    ( 21 , 'Haishu' ,NULL ,$$Palmo esterno mano$$ ),
-    ( 22 , 'Shuto' ,NULL ,$$Mano a taglio$$ ),
-    ( 23 , 'Nukite' ,NULL ,$$punta delle dita estese ed unite $$ ),
-    ( 24 , 'Sune' ,NULL ,$$tibbia$$ ),
-    ( 25 , 'Hiza' ,NULL ,$$Ginocchio$$ ),
-    ( 26 , 'Kakato' ,NULL ,$$Tallone$$ ),
-    ( 28 , 'Sokuto' ,NULL ,$$Esterno del piede$$ ),
-    ( 29 , 'teisoku' ,NULL ,$$Palmo del piede$$ ),
-    ( 30 , 'Tsumashi' ,NULL ,$$Dita del piede$$ ),
-    ( 31 , 'Heisoku' ,NULL ,$$Dorso del piede$$ );
+INSERT INTO ski.strikingparts(id_part, name, translation, description, notes, resource_url) VALUES 
+    ( 1 , 'Seiken' ,NULL ,$$Nocche indice e medio$$, NULL, NULL ),
+    ( 2 , 'Koshi' ,NULL ,$$Radice delle dita dei piedi con dita alzate$$, NULL, NULL ),
+    ( 3 , 'Empi' ,$$Gomito$$ ,$$Gomito$$, NULL, NULL ),
+    ( 4 , 'Hirabasami' ,NULL ,$$incavo mano pollice indice$$, NULL, NULL ),
+    ( 5 , 'Kumade' ,NULL ,$$palmo della mano$$, NULL, NULL ),
+    ( 6 , 'Teisho' ,NULL ,$$palmo della mano all' attaccatura con l'avambraccio$$, NULL, NULL ),
+    ( 7 , 'Gaiwan' ,NULL ,$$Avambraccio dal lato esterno / ulna$$, NULL, NULL ),
+    ( 8 , 'Naiwan' ,NULL ,$$Avambraccio dal lato interno / radio$$, NULL, NULL ),
+    ( 9 , 'Haiwan' ,NULL ,$$Avambraccio lato superiore$$, NULL, NULL ),
+    ( 10 , 'Huraken' ,NULL ,$$Esterno della mano$$, NULL, NULL ),
+    ( 11 , 'Keito' ,NULL ,$$Radice del police$$, NULL, NULL ),
+    ( 12 , 'Kakuto' ,NULL ,$$polso esterno$$, NULL, NULL ),
+    ( 13 , 'Tetsui' ,NULL ,$$parte bassa del pungo$$, NULL, NULL ),
+    ( 14 , 'Washide' ,NULL ,$$Punta delle dita unite come a raccogliere$$, NULL, NULL ),
+    ( 15 , 'Nakadaka Ken' ,NULL ,$$Medio leggermente fuoriuscito dal pugno$$, NULL, NULL ),
+    ( 16 , 'Ippon Ken' ,NULL ,$$Indice leggermente fuoriuscito dal pugno$$, NULL, NULL ),
+    ( 17 , 'Hihon Nukite' ,NULL ,$$Punta di indice e medio protesi$$, NULL, NULL ),
+    ( 18 , 'Hiraken' ,NULL ,$$Falange intermedia della mano$$, NULL, NULL ),
+    ( 19 , 'Ippon Nukite' ,NULL ,$$Punta dell'indice proteso$$, NULL, NULL ),
+    ( 20 , 'Haito' ,NULL ,$$esterno della falange del pollice$$, NULL, NULL ),
+    ( 21 , 'Haishu' ,NULL ,$$Palmo esterno mano$$, NULL, NULL ),
+    ( 22 , 'Shuto' ,NULL ,$$Mano a taglio$$, NULL, NULL ),
+    ( 23 , 'Nukite' ,NULL ,$$punta delle dita estese ed unite $$, NULL, NULL ),
+    ( 24 , 'Sune' ,NULL ,$$tibbia$$, NULL, NULL ),
+    ( 25 , 'Hiza' ,NULL ,$$Ginocchio$$, NULL, NULL ),
+    ( 26 , 'Kakato' ,NULL ,$$Tallone$$, NULL, NULL ),
+    ( 28 , 'Sokuto' ,NULL ,$$Esterno del piede$$, NULL, NULL ),
+    ( 29 , 'teisoku' ,NULL ,$$Palmo del piede$$, NULL, NULL ),
+    ( 30 , 'Tsumashi' ,NULL ,$$Dita del piede$$, NULL, NULL ),
+    ( 31 , 'Heisoku' ,NULL ,$$Dorso del piede$$, NULL, NULL );
 
 
 INSERT INTO ski.stands(id_stand ,name ,description ,illustration_url ,notes ) VALUES
@@ -837,15 +837,13 @@ INSERT INTO ski.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement ,notes ,res
     ( 566 , 529 , 530, 'Still' , NULL , NULL )
 ;
 
- 
-
 
 INSERT INTO ski.Kata_inventory(
     id_kata ,
     kata ,
     serie ,
     starting_leg ,
-    notes
+    notes --, remarks, resources, resource_url
 ) VALUES 
     ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , $$Primo kata$$ ) ,
     ( 2 , 'Heian Nidan' , 'Heian' , 'sx' , NULL ) ,
@@ -863,7 +861,7 @@ INSERT INTO ski.kata_sequence(
     kata_id ,
     seq_num ,
     stand_id ,
-    side ,
+    side , --speed, side, hips,
     embusen  ,
     facing ,
     kiai ,
@@ -927,7 +925,7 @@ INSERT INTO ski.kata_sequence(
 INSERT INTO ski.kata_sequence_waza (
     sequence_id ,
     arto ,
-    technic_id ,
+    technic_id , --strikingpart_id,
     technic_target_id,
     notes
 ) VALUES
@@ -995,7 +993,7 @@ INSERT INTO ski.kata_tx(
     from_sequence ,
     to_sequence ,
     tempo ,
-    direction,
+    direction, --intermediate_stand_id,
     notes 
 ) VALUES
     ( 1 , 2 , 'Fast' , 'sx' , $$Con piede destro già pronto prima abbassarsi alla quota corretta poi eseguire le parata$$ ),
@@ -1055,9 +1053,9 @@ INSERT
 INTO ski.bunkai_inventory (id_bunkai, kata_id, version, name, description, notes, resources, resource_url)
 VALUES 
     ( 1 , 1 , 1 , $$applicazione Shodan$$ , $$Primo esempio applicativo$$ , $$Bunkai di esempio$$ , NULL , NULL ),
-    ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , NULL , NULL )
+    ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , '{"Spiegazione":"Ecco una spiegazione","Autore":"M° Capa di bomba"}'::jsonb , NULL ),
+    ( 2 , 2 , 2 , $$Applicazione Nidan due$$ , $$esempio aggiuntivo$$ , $$Bunkai di esempio$$ , '{"Spiegazione":"Spiegato","info":"questo è un test"}'::jsonb , NULL )
 ;
---(1,1, 1, 'Bunkai Heian Shodan v1', 'Bunkai for Heian Shodan version 1', 'Initial version', '{}', '[]', NULL)
 
 INSERT 
 INTO ski.bunkai_sequences (id_bunkaisequence,bunkai_id, kata_sequence_id, description, notes, remarks, resources, resource_url)
@@ -1068,7 +1066,7 @@ VALUES
     ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , ARRAY[
         ROW('Braccio SX', $$Parata$$, $$Uchi uke lascia passare l'attacco$$, $$Parata da un attacco$$)::public.detailednotes,
         ROW('Braccio DX', $$Offesa$$, $$Passando dall'' interno colpisce l''avversario$$, $$Attacco$$)::public.detailednotes
-    ] , NULL , NULL ),
+    ] , $json${"Spiegazione":"Ecco un'espressione con virgolette","Esempio":"stringa di esempio"}$json$::jsonb , NULL ),
     ( 5 , 2 , 33 , $$Attacco$$ , NULL , NULL , NULL , NULL )
 ;
 --(1,1,1, 'Bunkai for step 1 of Heian Shodan', 'Initial bunkai step', '{}', '[]', NULL)

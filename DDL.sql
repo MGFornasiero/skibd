@@ -363,7 +363,7 @@ CREATE TABLE ski.kata_inventory (
   starting_leg public.sides NOT NULL,
   notes        TEXT,
   remarks public.detailednotes[],
-  resources      JSONB DEFAULT '[]'::jsonb ,
+  resources      JSONB  ,
   resource_url TEXT,
   CONSTRAINT unique_kata_inventory_kata UNIQUE (kata)
 );
@@ -385,7 +385,7 @@ CREATE TABLE ski.kata_sequence (
   kiai      BOOLEAN,
   notes     TEXT,
   remarks   public.detailednotes[],
-  resources   JSONB DEFAULT '[]'::jsonb,
+  resources   JSONB ,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
@@ -406,7 +406,7 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
   notes             TEXT,
   remarks         public.detailednotes[],
-  resources           JSONB, --DEFAULT '[]'::jsonb ,
+  resources           JSONB, -- ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED
@@ -426,7 +426,7 @@ CREATE TABLE ski.kata_tx (
   --mettere qualcosa 
   notes TEXT,
   remarks public.detailednotes[],
-  resources   JSONB DEFAULT '[]'::jsonb ,
+  resources   JSONB  ,
   resource_url TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
@@ -447,7 +447,7 @@ CREATE TABLE ski.bunkai_inventory (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   notes TEXT,
-  resources   JSONB DEFAULT '[]'::jsonb ,
+  resources   JSONB  ,
   resource_url TEXT,
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
 );
@@ -460,7 +460,7 @@ CREATE TABLE ski.bunkai_sequences (
   description TEXT,
   notes TEXT,
   remarks public.detailednotes[],
-  resources   JSONB DEFAULT '[]'::jsonb ,
+  resources   JSONB  ,
   resource_url TEXT,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
@@ -1039,6 +1039,7 @@ AS $Func$
     WHERE kata_id = _kata_id;
 $Func$;
 
+SELECT id_bunkai,version,name,description,notes,resources FROM public.get_katabunkais(1);
 
 CREATE OR REPLACE FUNCTION public.get_bunkai(_bunkai_id INT)
 RETURNS TABLE (
@@ -1342,9 +1343,9 @@ RETURNS TABLE (
   seq_num SMALLINT,
   stand_id SMALLINT,
   stand_name TEXT,
-  speed public.speed_type,
+  speed public.tempo,
   side public.sides,
-  hips public.hips_type,
+  hips public.hips,
   embusen public.embusen_points,
   facing public.absolute_directions,
   kiai BOOLEAN,
@@ -1358,7 +1359,7 @@ SELECT ks.id_sequence,
 ks.kata_id,
 ks.seq_num,
 ks.stand_id,
-stand.name as stand_name,
+MAX(stand.name) as stand_name,
 ks.speed,
 ks.side, 
 ks.hips,
@@ -1452,6 +1453,20 @@ CREATE TABLE staging.technics(
   CONSTRAINT unique_staging_technics_name UNIQUE(name)
 );
 
+CREATE TABLE staging.technics_decomposition(
+  id_decomposition SMALLINT UNIQUE,
+  technic_id SMALLINT NOT NULL,
+  component_order SMALLINT NOT NULL,
+  description TEXT,
+  explatations TEXT,
+  notes TEXT,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  CONSTRAINT unique_staging_technics_decomposition UNIQUE (technic_id, component_order)
+);
+
 CREATE TABLE staging.stands(
   id_stand SMALLINT UNIQUE,
   name VARCHAR(255) NOT NULL,
@@ -1493,6 +1508,7 @@ CREATE TABLE staging.kihon_sequences(
   seq_num SMALLINT NOT NULL,
   stand_id SMALLINT NOT NULL,
   technic_id SMALLINT NOT NULL,
+  hips public.hips,
   gyaku bool DEFAULT false,
   target_hgt public.target_hgt,
   notes TEXT,
@@ -1525,6 +1541,8 @@ CREATE TABLE staging.kata_inventory(
   serie public.kata_series,
   starting_leg public.sides NOT NULL,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1540,10 +1558,13 @@ CREATE TABLE staging.kata_sequence(
   stand_id SMALLINT NOT NULL,
   speed public.tempo,
   side public.sides,
+  hips public.hips,
   embusen public.embusen_points,
   facing public.absolute_directions,
   kiai bool,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1560,6 +1581,8 @@ CREATE TABLE staging.kata_sequence_waza (
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
@@ -1574,11 +1597,45 @@ CREATE TABLE staging.kata_tx (
   direction public.sides,
   intermediate_stand_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
   staging_update BOOL
+);
+
+CREATE TABLE staging.bunkai_inventory (
+  id_bunkai SMALLINT,
+  kata_id SMALLINT NOT NULL,
+  version SMALLINT DEFAULT 1,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  notes TEXT,
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  CONSTRAINT unique_staging_bunkai_inventory UNIQUE (kata_id, version)
+);
+
+CREATE TABLE staging.bunkai_sequences (
+  id_bunkaisequence SMALLINT UNIQUE,
+  bunkai_id SMALLINT NOT NULL,
+  kata_sequence_id SMALLINT NOT NULL,
+  description TEXT,
+  notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  CONSTRAINT unique_staging_bunkai_sequence UNIQUE (bunkai_id, kata_sequence_id)
 );
 
 -- ---------- Upsert ----------
@@ -1590,6 +1647,20 @@ CREATE TABLE upsert.technics(
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE upsert.technics_decomposition(
+  id_decomposition SMALLINT,
+  technic_id SMALLINT,
+  component_order SMALLINT,
+  description TEXT,
+  explatations TEXT,
+  notes TEXT,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
   insertion TIMESTAMP
 );
 
@@ -1660,6 +1731,7 @@ CREATE TABLE upsert.kihon_sequences(
   seq_num SMALLINT,
   stand_id SMALLINT,
   technic_id SMALLINT,
+  hips public.hips,
   gyaku bool,
   target_hgt public.target_hgt,
   notes TEXT,
@@ -1692,6 +1764,8 @@ CREATE TABLE upsert.kata_inventory(
   serie public.kata_series,
   starting_leg public.sides,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1707,10 +1781,13 @@ CREATE TABLE upsert.kata_sequence(
   stand_id SMALLINT,
   speed public.tempo,
   side public.sides,
+  hips public.hips,
   embusen public.embusen_points,
   facing public.absolute_directions,
   kiai bool,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1727,6 +1804,8 @@ CREATE TABLE upsert.kata_sequence_waza(
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
@@ -1742,6 +1821,40 @@ CREATE TABLE upsert.kata_tx(
   direction public.sides,
   intermediate_stand_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE upsert.bunkai_inventory (
+  id_bunkai SMALLINT,
+  kata_id SMALLINT,
+  version SMALLINT,
+  name VARCHAR(255),
+  description TEXT,
+  notes TEXT,
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE upsert.bunkai_sequences (
+  id_bunkaisequence SMALLINT,
+  bunkai_id SMALLINT,
+  kata_sequence_id SMALLINT,
+  description TEXT,
+  notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1759,6 +1872,20 @@ CREATE TABLE reject.technics(
   notes TEXT,
   resource_url TEXT,
   staging_autoid BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE reject.technics_decomposition(
+  id_decomposition SMALLINT,
+  technic_id SMALLINT,
+  component_order SMALLINT,
+  description TEXT,
+  explatations TEXT,
+  notes TEXT,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
   insertion TIMESTAMP
 );
 
@@ -1829,6 +1956,7 @@ CREATE TABLE reject.kihon_sequences(
   seq_num SMALLINT,
   stand_id SMALLINT,
   technic_id SMALLINT,
+  hips public.hips,
   gyaku bool,
   target_hgt public.target_hgt,
   notes TEXT,
@@ -1861,6 +1989,8 @@ CREATE TABLE reject.kata_inventory(
   serie public.kata_series,
   starting_leg public.sides,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1876,10 +2006,13 @@ CREATE TABLE reject.kata_sequence(
   stand_id SMALLINT,
   speed public.tempo,
   side public.sides,
+  hips public.hips,
   embusen public.embusen_points,
   facing public.absolute_directions,
   kiai bool,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1896,6 +2029,8 @@ CREATE TABLE reject.kata_sequence_waza(
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   staging_autoid BOOL,
   staging_fk_error BOOL,
   staging_pk_update BOOL,
@@ -1911,6 +2046,40 @@ CREATE TABLE reject.kata_tx(
   direction public.sides,
   intermediate_stand_id SMALLINT,
   notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE reject.bunkai_inventory (
+  id_bunkai SMALLINT,
+  kata_id SMALLINT,
+  version SMALLINT,
+  name VARCHAR(255),
+  description TEXT,
+  notes TEXT,
+  resources JSONB,
+  resource_url TEXT,
+  staging_autoid BOOL,
+  staging_fk_error BOOL,
+  staging_pk_update BOOL,
+  staging_update BOOL,
+  insertion TIMESTAMP
+);
+
+CREATE TABLE reject.bunkai_sequences (
+  id_bunkaisequence SMALLINT,
+  bunkai_id SMALLINT,
+  kata_sequence_id SMALLINT,
+  description TEXT,
+  notes TEXT,
+  remarks public.detailednotes[],
+  resources JSONB,
   resource_url TEXT,
   staging_autoid BOOL,
   staging_fk_error BOOL,
@@ -1936,6 +2105,11 @@ CREATE VIEW staging.dom_technics AS
   SELECT id_technic FROM ski.technics
   UNION
   SELECT id_technic FROM staging.technics;
+
+CREATE VIEW staging.dom_technics_decomposition AS
+  SELECT id_decomposition FROM ski.technics_decomposition
+  UNION
+  SELECT id_decomposition FROM staging.technics_decomposition;
 
 CREATE VIEW staging.dom_stands AS
   SELECT id_stand FROM ski.stands
@@ -1981,6 +2155,16 @@ CREATE VIEW staging.dom_kata_tx AS
   SELECT id_tx FROM ski.kata_tx
   UNION
   SELECT id_tx FROM staging.kata_tx;
+
+CREATE VIEW staging.dom_bunkai_inventory AS
+  SELECT id_bunkai FROM ski.bunkai_inventory
+  UNION
+  SELECT id_bunkai FROM staging.bunkai_inventory;
+
+CREATE VIEW staging.dom_bunkai_sequences AS
+  SELECT id_bunkaisequence FROM ski.bunkai_sequences
+  UNION
+  SELECT id_bunkaisequence FROM staging.bunkai_sequences;
 
 --
 CREATE OR REPLACE FUNCTION staging.trigfunc_ins_technics()
@@ -3256,6 +3440,19 @@ CREATE TABLE bkp.strikingparts(
 )
 ; 
 
+CREATE TABLE bkp.technics_decomposition(
+    bkp TIMESTAMP ,
+    id_decomposition SMALLINT,
+    technic_id SMALLINT,
+    component_order SMALLINT,
+    description TEXT,
+    explatations TEXT, 
+    notes TEXT,
+    resource_url TEXT
+)
+;
+
+
 CREATE TABLE bkp.technics(
     bkp TIMESTAMP ,
     id_technic SMALLINT,
@@ -3441,6 +3638,25 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
     ; 
     INSERT INTO bkp.stands (
         bkp  ,
+        id_decomposition,
+        technic_id,
+        component_order,
+        description,
+        explatations, 
+        notes,
+        resource_url
+    ) SELECT tms_op ,
+        id_decomposition,
+        technic_id,
+        component_order,
+        description,
+        explatations, 
+        notes,
+        resource_url
+    FROM ski.technics_decomposition
+    ;
+    INSERT INTO bkp.stands (
+        bkp  ,
         id_stand  ,
         name  ,
         description ,
@@ -3490,6 +3706,7 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         seq_num  ,
         stand_id  ,
         technic_id  ,
+    hips public.hips,
         gyaku ,
         target_hgt ,
         notes  ,
@@ -3500,6 +3717,7 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         seq_num  ,
         stand_id  ,
         technic_id  ,
+        hips,
         gyaku ,
         target_hgt ,
         notes  ,
@@ -3534,6 +3752,8 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         serie ,
         starting_leg ,
         notes ,
+        remarks,
+        resources,
         resource_url 
     ) SELECT tms_op ,
         id_kata ,
@@ -3541,6 +3761,8 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         serie ,
         starting_leg ,
         notes ,
+        remarks,
+        resources,
         resource_url 
     FROM ski.kata_inventory
     ; -- Inventario in forma normale dei kata
@@ -3552,11 +3774,14 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         seq_num  ,
         stand_id  ,
         speed ,
-        side , 
+        side ,
+        hips,
         embusen ,
         facing , 
         kiai ,
         notes ,
+        remarks,
+        resources,
         resource_url 
     ) SELECT tms_op ,
         id_sequence  ,
@@ -3564,11 +3789,14 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         seq_num  ,
         stand_id  ,
         speed ,
-        side , 
+        side ,
+        hips,
         embusen ,
         facing , 
         kiai,
         notes ,
+        remarks,
+        resources,
         resource_url 
     FROM ski.kata_sequence
     ; 
@@ -3581,7 +3809,9 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         technic_id  ,
         strikingpart_id  ,
         technic_target_id  ,
-        notes 
+        notes ,
+        remarks,
+        resources
     ) SELECT tms_op ,
         id_kswaza  ,
         sequence_id  ,
@@ -3589,7 +3819,9 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         technic_id  ,
         strikingpart_id  ,
         technic_target_id  ,
-        notes 
+        notes ,
+        remarks,
+        resources
     FROM ski.kata_sequence_waza
     ;
 
@@ -3602,6 +3834,8 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         direction ,
         intermediate_stand_id ,
         notes ,
+        remarks,
+        resources,
         resource_url  
     ) SELECT tms_op ,
         id_tx  ,
@@ -3609,10 +3843,42 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         to_sequence  ,
         tempo ,
         direction ,
-        intermediate_stand  ,
+        intermediate_stand_id  ,
         notes ,
+        remarks,
+        resources,
         resource_url  
     FROM ski.kata_tx
     ;
+
+    INSERT INTO bkp.bunkai_inventory (
+        bkp,
+        id_bunkai,
+        kata_id,
+        version,
+        name,
+        description,
+        notes,
+        resources,
+        resource_url
+    ) SELECT tms_op,
+        id_bunkai,
+        kata_id,
+        version,
+        name,
+        description,
+        notes,
+        resources,
+        resource_url
+    FROM ski.bunkai_inventory;
+
+    INSERT INTO bkp.bunkai_sequences (
+        bkp, id_bunkaisequence, bunkai_id, kata_sequence_id,
+        description, notes, remarks, resources, resource_url
+    ) SELECT tms_op,
+        id_bunkaisequence, bunkai_id, kata_sequence_id,
+        description, notes, remarks, resources, resource_url
+    FROM ski.bunkai_sequences;
+
     END;
 $proc$;
