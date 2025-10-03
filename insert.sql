@@ -1,4 +1,5 @@
-INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes ) VALUES
+--aggiornare
+INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes,resource_url ) VALUES
     ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ,NULL ),
     ( 2 , 'Chudan' ,$$Chudan$$ ,$$Medio$$ ,$$Poco sopra l'ombelico$$ ),
     ( 3 , 'Gedan' ,$$Gedan$$ ,$$Basso$$ ,NULL ),
@@ -173,8 +174,8 @@ INSERT INTO ski.grades (id_grade,gtype,grade, color) VALUES
     ( 15 , 'dan' , 6 , 'nero' ),
     ( 16 , 'dan' , 7 , 'nero' )
     ;
-
-INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
+--da aggiornare
+INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,notes,resources ) VALUES
     ( 1 ,'1' ,'1' ),
     ( 2 ,'1' ,'2' ),
     ( 3 ,'1' ,'3' ),
@@ -295,8 +296,8 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number ) VALUES
     ( 120 ,'12' ,'10' )
 ;
 
-
-INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,technic_id,gyaku,target_hgt,notes,resource_url) VALUES 
+--aggiornare
+INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,technic_id,gyaku,target_hgt,resources,notes,resource_url) VALUES 
     ( 1 ,1 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 2 ,1 ,1,4 , 15 ,'false' ,NULL , NULL , NULL ),
     ( 3 ,2 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
@@ -615,8 +616,8 @@ INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,tec
     ( 541 ,100 ,1,4 , -250 ,'false' ,'Chudan' , NULL , NULL )
 ;
 
-
-INSERT INTO ski.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement ,notes ,resource_url ) VALUES
+--aggiornare
+INSERT INTO ski.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement , resources,notes ,resource_url ) VALUES
     ( 1 , 1 , 2, 'Still' , NULL , NULL ),
     ( 4 , 3 , 4, 'Still' , NULL , NULL ),
     ( 7 , 5 , 6, 'Still' , NULL , NULL ),
@@ -837,13 +838,15 @@ INSERT INTO ski.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement ,notes ,res
     ( 566 , 529 , 530, 'Still' , NULL , NULL )
 ;
 
-
+--aggiornare
 INSERT INTO ski.Kata_inventory(
     id_kata ,
     kata ,
     serie ,
     starting_leg ,
-    notes --, remarks, resources, resource_url
+    notes , 
+    resources, 
+    resource_url
 ) VALUES 
     ( 1 , 'Heian Shodan' , 'Heian' , 'sx' , $$Primo kata$$ ) ,
     ( 2 , 'Heian Nidan' , 'Heian' , 'sx' , NULL ) ,
@@ -855,17 +858,22 @@ INSERT INTO ski.Kata_inventory(
     ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL ) ,
     ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL ) 
 ;
-
+--aggiornare
 INSERT INTO ski.kata_sequence(
     id_sequence ,
     kata_id ,
     seq_num ,
     stand_id ,
-    side , --speed, side, hips,
+    speed, 
+    side, 
+    hips,
     embusen  ,
     facing ,
     kiai ,
-    notes
+    notes,
+    remarks,
+    resources,
+    resource_url
 ) VALUES
     ( 1 , 1 , 0, 1 ,  'frontal'  , (0,0) , 'N' , false ,  'Preparare il piede destro'  ) ,
     ( 2 , 1 , 1, 4 ,  'sx'  , (0,0) , 'O' , false , NULL ) ,
@@ -921,13 +929,16 @@ INSERT INTO ski.kata_sequence(
     ( 58 , 2 , 28, 4 ,  'sx'  , (0,0) , 'NE' , true , NULL ) 
 ;
 
-
+--aggiornare
 INSERT INTO ski.kata_sequence_waza (
+    id_kswaza ,
     sequence_id ,
     arto ,
-    technic_id , --strikingpart_id,
+    technic_id ,
+    strikingpart_id,
     technic_target_id,
-    notes
+    notes,
+    resources
 ) VALUES
     ( 1 , 'Braccia' , 0, NULL ,$$Attesa dell' hajime$$ ),
     ( 2 , 'Braccio SX' , 19, 2 ,NULL ),
@@ -987,14 +998,18 @@ INSERT INTO ski.kata_sequence_waza (
     ( 57 , 'Braccio DX' , 85, NULL ,NULL ),
     ( 58 , 'Braccio SX' , 11, NULL ,NULL )
 ;
-
+aggiornare
 INSERT INTO ski.kata_tx(
-    --id_tx ,
+    id_tx ,
     from_sequence ,
     to_sequence ,
     tempo ,
-    direction, --intermediate_stand_id,
-    notes 
+    direction, 
+    intermediate_stand_id,
+    notes,
+    remarks,
+    resources,
+    resource_url
 ) VALUES
     ( 1 , 2 , 'Fast' , 'sx' , $$Con piede destro già pronto prima abbassarsi alla quota corretta poi eseguire le parata$$ ),
     ( 2 , 3 , 'Fast' , 'frontal' , NULL ),
@@ -1050,7 +1065,16 @@ INSERT INTO ski.kata_tx(
 
 
 INSERT 
-INTO ski.bunkai_inventory (id_bunkai, kata_id, version, name, description, notes, resources, resource_url)
+INTO ski.bunkai_inventory (
+    id_bunkai, 
+    kata_id, 
+    version, 
+    name, 
+    description, 
+    notes, 
+    resources, 
+    resource_url
+)
 VALUES 
     ( 1 , 1 , 1 , $$applicazione Shodan$$ , $$Primo esempio applicativo$$ , $$Bunkai di esempio$$ , NULL , NULL ),
     ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , '{"Spiegazione":"Ecco una spiegazione","Autore":"M° Capa di bomba"}'::jsonb , NULL ),
@@ -1058,7 +1082,16 @@ VALUES
 ;
 
 INSERT 
-INTO ski.bunkai_sequences (id_bunkaisequence,bunkai_id, kata_sequence_id, description, notes, remarks, resources, resource_url)
+INTO ski.bunkai_sequences (
+    id_bunkaisequence,
+    bunkai_id, 
+    kata_sequence_id, 
+    description, 
+    notes, 
+    remarks, 
+    resources, 
+    resource_url
+)
 VALUES 
     ( 1 , 1 , 2 , $$Para avversario dll' interno$$ , NULL , NULL , NULL , NULL ),
     ( 2 , 1 , 3 , $$Tsuki alla bocca dello stomaco$$ , NULL , NULL , NULL , NULL ),

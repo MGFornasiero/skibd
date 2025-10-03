@@ -4,32 +4,6 @@
 -- to ensure a clean slate before creating new objects.
 -- =============================================================
 
-DO $Clean$
-BEGIN
-   -- Check if the 'student' role exists before trying to clean it up.
-   IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'student') THEN
-      RAISE NOTICE 'Role "student" exists. Cleaning up...';
-      -- Terminate any active connections for the 'student' role to allow dropping it.
-      PERFORM pg_terminate_backend(pid)
-      FROM pg_stat_activity
-      WHERE usename = 'student';
-
-      -- Temporarily grant 'student' role to the current user ('postgres')
-      -- to gain permissions for REASSIGN OWNED. This is required even for superusers.
-      EXECUTE 'GRANT student TO ' || quote_ident(current_user);
-
-      -- Drop objects owned by 'student' and, crucially, revoke any privileges
-      -- granted to 'student' on other objects. This removes all dependencies.
-      EXECUTE 'DROP OWNED BY student CASCADE';
-
-      -- Revoke the temporary membership.
-      EXECUTE 'REVOKE student FROM ' || quote_ident(current_user);
-
-      -- Now that the role owns nothing, it can be dropped.
-      EXECUTE 'DROP ROLE student';
-   END IF;
-END $Clean$;
-
 DROP SCHEMA IF EXISTS ski CASCADE;
 DROP SCHEMA IF EXISTS bkp CASCADE;
 DROP SCHEMA IF EXISTS staging CASCADE;
@@ -49,7 +23,8 @@ DROP TYPE IF EXISTS sides CASCADE;
 DROP TYPE IF EXISTS grade_type CASCADE;
 DROP TYPE IF EXISTS detailednotes CASCADE;
 DROP TYPE IF EXISTS public.hips CASCADE;
-
+DROP TYPE IF EXISTS public.limbs CASCADE;
+DROP TYPE IF EXISTS public.bodypart CASCADE;
 
 
 DO $Clean$
@@ -68,34 +43,6 @@ BEGIN
         EXECUTE r.drop_cmd;
     END LOOP;
 END $Clean$;
-
--- =============================================================
--- Read-only user setup
--- This section creates a read-only role `student` and grants
--- appropriate permissions for accessing the database.
--- =============================================================
-CREATE ROLE student WITH LOGIN PASSWORD 'Password'; -- Cambiare password in produzione
-
-REVOKE ALL ON DATABASE postgres FROM student;
-
-GRANT CONNECT ON DATABASE postgres TO student;
-
-GRANT USAGE ON SCHEMA public TO student;
-
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO student;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT SELECT ON TABLES TO student;
-
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO student;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT EXECUTE ON FUNCTIONS TO student;
-
---valutare se servono anche le sequenze non credo perchè non fa insert
---GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO student;
---ALTER DEFAULT PRIVILEGES IN SCHEMA public
---GRANT SELECT ON SEQUENCES TO student;
 
 -- =============================================================
 -- Create Schemas
@@ -155,7 +102,7 @@ CREATE TYPE public.limbs AS ENUM (
 CREATE TYPE public.bodypart AS (
   limb public.limbs,
   side public.sides  
-)
+);
 
 CREATE TYPE public.hips AS ENUM ('Hanmi', 'Shomen');
 
@@ -259,7 +206,7 @@ CREATE TABLE ski.technics (
 -- Table: ski.technics_decomposition
 -- Explanation of techniques into components (if needed).
 -- -------------------------------------------------------------
-
+--da preparare l'insert e l'utilizzo
 CREATE TABLE ski.technics_decomposition (
   id_decomposition SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technicdecomposition'),
   technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
@@ -315,11 +262,12 @@ CREATE TABLE ski.grades (
 -- Normalized inventory of kihon per grade.
 -- -------------------------------------------------------------
 CREATE TABLE ski.kihon_inventory (
-  id_inventory SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_inventory'),
-  grade_id SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
-  number   SMALLINT NOT NULL,
-  notes    TEXT,
-  tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  id_inventory  SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_inventory'),
+  grade_id      SMALLINT NOT NULL REFERENCES ski.grades(id_grade),
+  number        SMALLINT NOT NULL,
+  resources     JSONB  ,
+  notes         TEXT,
+  tsv_notes     tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kihon_inventory UNIQUE (grade_id, number)
 );
 
@@ -328,16 +276,17 @@ CREATE TABLE ski.kihon_inventory (
 -- Ordered sequence of techniques composing a kihon.
 -- -------------------------------------------------------------
 CREATE TABLE ski.kihon_sequences (
-  id_sequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_sequence'),
-  inventory_id SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
-  seq_num      SMALLINT NOT NULL,
-  stand_id     SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
-  technic_id   SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
-  hips         public.hips,
-  gyaku        BOOLEAN,
-  target_hgt   public.target_hgt,
-  notes        TEXT,
-  resource_url TEXT,
+  id_sequence   SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_sequence'),
+  inventory_id  SMALLINT NOT NULL REFERENCES ski.kihon_inventory(id_inventory),
+  seq_num       SMALLINT NOT NULL,
+  stand_id      SMALLINT NOT NULL REFERENCES ski.stands(id_stand),
+  technic_id    SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  hips          public.hips,
+  gyaku         BOOLEAN,
+  target_hgt    public.target_hgt,
+  resources     JSONB  ,
+  notes         TEXT,
+  resource_url  TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kihon_sequences UNIQUE (inventory_id, seq_num)
 );
@@ -350,10 +299,11 @@ CREATE TABLE ski.kihon_tx (
   id_tx SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kihon_id_tx'),
   from_sequence SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
   to_sequence   SMALLINT NOT NULL REFERENCES ski.kihon_sequences(id_sequence),
-  movement   public.movements,
-  notes      TEXT,
-  tempo      public.tempo,
-  resource_url TEXT,
+  movement      public.movements,
+  resources     JSONB  ,
+  notes         TEXT,
+  tempo         public.tempo,
+  resource_url  TEXT,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kihon_tx UNIQUE (from_sequence, to_sequence)
 );
@@ -373,7 +323,6 @@ CREATE TABLE ski.kata_inventory (
   serie        public.kata_series,
   starting_leg public.sides NOT NULL,
   notes        TEXT,
-  remarks public.detailednotes[],
   resources      JSONB  ,
   resource_url TEXT,
   CONSTRAINT unique_kata_inventory_kata UNIQUE (kata)
@@ -416,8 +365,7 @@ CREATE TABLE ski.kata_sequence_waza (
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
   notes             TEXT,
-  --remarks         public.detailednotes[],
-  resources           JSONB, -- ,
+  resources           JSONB, 
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED
@@ -681,7 +629,7 @@ AS $Func$
              'technic_target_id', combo.technic_target_id,
              'Obiettivo', combo.target_name,
              'waza_note', combo.waza_note,
-             'waza_remarks', combo.waza_remarks,
+             --'waza_remarks', combo.waza_remarks,
              'waza_resources', combo.waza_resources
            )
          ) AS Tecniche,
@@ -702,7 +650,7 @@ AS $Func$
            tech.name AS technic_name,
            targets.name AS target_name,
            combo_raw.notes AS waza_note,
-           combo_raw.remarks AS waza_remarks,
+           --combo_raw.remarks AS waza_remarks,
            combo_raw.resources AS waza_resources
     FROM ski.kata_sequence_waza AS combo_raw
     JOIN ski.technics AS tech
@@ -1387,7 +1335,7 @@ json_agg(
     'technic_target_id', combo.technic_target_id,
     'Obiettivo', combo.target_name,
     'waza_note', combo.waza_note,
-    'waza_remarks', combo.waza_remarks,
+    --'waza_remarks', combo.waza_remarks,
     'waza_resources', combo.waza_resources
   )
 ) AS Tecniche
@@ -1404,7 +1352,7 @@ JOIN (
           tech.name AS technic_name,
           targets.name AS target_name,
           combo_raw.notes AS waza_note,
-          combo_raw.remarks AS waza_remarks,
+          --combo_raw.remarks AS waza_remarks,
           combo_raw.resources AS waza_resources
   FROM ski.kata_sequence_waza AS combo_raw
   JOIN ski.technics AS tech
@@ -3717,7 +3665,7 @@ CREATE OR REPLACE PROCEDURE ski.bkp()
         seq_num  ,
         stand_id  ,
         technic_id  ,
-    hips public.hips,
+        hips,
         gyaku ,
         target_hgt ,
         notes  ,
