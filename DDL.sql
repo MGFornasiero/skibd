@@ -140,12 +140,22 @@ CREATE TYPE public.embusen_points AS (
   y SMALLINT
 );
 
--- Limbs (arti)
+-- da rimuovere
 CREATE TYPE public.arti AS ENUM (
-  'Braccio DX', 'Braccio SX', 'Braccia',
+  'Mano DX','Braccio DX', 'Braccio SX', 'Braccia',
   'Gamba DX',   'Gamba SX',   'Gambe',
   'NA'
 );
+
+CREATE TYPE public.limbs AS ENUM (
+  'Mano','Braccio','Piede','Gamba','Ginochio','NA'
+);
+
+-- Tipo per sostituire arti in modo più dettagliato
+CREATE TYPE public.bodypart AS (
+  limb public.limbs,
+  side public.sides  
+)
 
 CREATE TYPE public.hips AS ENUM ('Hanmi', 'Shomen');
 
@@ -155,9 +165,9 @@ CREATE TYPE public.beltcolor AS ENUM ('bianco','giallo','arancio','verde','blu',
 -- Absolute directions
 CREATE TYPE public.absolute_directions AS ENUM ('N','NE','E','SE','S','SO','O','NO');
 
--- Detailed notes !NON usato!
+-- Detailed notes 
 CREATE TYPE public.detailednotes AS (
-  arto public.arti ,
+  arto public.bodypart ,
   description TEXT ,
   explatation TEXT ,
   note TEXT
@@ -168,6 +178,7 @@ CREATE TYPE public.detailednotes AS (
 -- Sequences (kept in `ski`)
 -- This section defines sequences for generating unique IDs.
 -- =============================================================
+CREATE SEQUENCE ski.seq_id_arti  AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_target  AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_part    AS SMALLINT;
 CREATE SEQUENCE ski.seq_id_technic AS SMALLINT;
@@ -400,12 +411,12 @@ CREATE TABLE ski.kata_sequence (
 CREATE TABLE ski.kata_sequence_waza (
   id_kswaza SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_kata_id_kswaza'),
   sequence_id       SMALLINT REFERENCES ski.kata_sequence(id_sequence),
-  arto              public.arti,
+  arto              public.bodypart,
   technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
   notes             TEXT,
-  remarks         public.detailednotes[],
+  --remarks         public.detailednotes[],
   resources           JSONB, -- ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
@@ -1576,7 +1587,7 @@ CREATE TABLE staging.kata_sequence(
 CREATE TABLE staging.kata_sequence_waza (
   id_kswaza SMALLINT UNIQUE,
   sequence_id SMALLINT,
-  arto public.arti,
+  arto public.bodypart,
   technic_id SMALLINT NOT NULL,
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
@@ -1799,7 +1810,7 @@ CREATE TABLE upsert.kata_sequence(
 CREATE TABLE upsert.kata_sequence_waza(
   id_kswaza SMALLINT,
   sequence_id SMALLINT,
-  arto public.arti,
+  arto public.bodypart,
   technic_id SMALLINT,
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
@@ -2024,7 +2035,7 @@ CREATE TABLE reject.kata_sequence(
 CREATE TABLE reject.kata_sequence_waza(
   id_kswaza SMALLINT,
   sequence_id SMALLINT,
-  arto public.arti,
+  arto public.bodypart,
   technic_id SMALLINT,
   strikingpart_id SMALLINT,
   technic_target_id SMALLINT,
