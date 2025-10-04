@@ -161,7 +161,7 @@ CREATE TABLE ski.targets (
   original_name  VARCHAR(255),
   description    TEXT,
   notes          TEXT,
-  resource_url   TEXT,
+  resource_url   TEXT DEFAULT NULL ,
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
@@ -178,7 +178,7 @@ CREATE TABLE ski.strikingparts (
   translation   VARCHAR(255),
   description   TEXT,
   notes         TEXT,
-  resource_url  TEXT,
+  resource_url  TEXT DEFAULT NULL ,
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name) || to_tsvector('simple', translation)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
@@ -195,7 +195,7 @@ CREATE TABLE ski.technics (
   name         VARCHAR(255) NOT NULL,
   description  TEXT,
   notes        TEXT,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   tsv_name        tsvector GENERATED ALWAYS AS (to_tsvector('simple', name)) STORED,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
@@ -214,7 +214,7 @@ CREATE TABLE ski.technics_decomposition (
   description TEXT,
   explatations TEXT, 
   notes TEXT,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_technics_decomposition UNIQUE (technic_id, component_order)
@@ -286,7 +286,7 @@ CREATE TABLE ski.kihon_sequences (
   target_hgt    public.target_hgt,
   resources     JSONB  ,
   notes         TEXT,
-  resource_url  TEXT,
+  resource_url  TEXT DEFAULT NULL ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kihon_sequences UNIQUE (inventory_id, seq_num)
 );
@@ -303,7 +303,7 @@ CREATE TABLE ski.kihon_tx (
   resources     JSONB  ,
   notes         TEXT,
   tempo         public.tempo,
-  resource_url  TEXT,
+  resource_url  TEXT DEFAULT NULL ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_kihon_tx UNIQUE (from_sequence, to_sequence)
 );
@@ -324,7 +324,7 @@ CREATE TABLE ski.kata_inventory (
   starting_leg public.sides NOT NULL,
   notes        TEXT,
   resources      JSONB  ,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   CONSTRAINT unique_kata_inventory_kata UNIQUE (kata)
 );
 
@@ -346,7 +346,7 @@ CREATE TABLE ski.kata_sequence (
   notes     TEXT,
   remarks   public.detailednotes[],
   resources   JSONB ,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED,
@@ -386,7 +386,7 @@ CREATE TABLE ski.kata_tx (
   notes TEXT,
   remarks public.detailednotes[],
   resources   JSONB  ,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED,
@@ -407,7 +407,7 @@ CREATE TABLE ski.bunkai_inventory (
   description TEXT,
   notes TEXT,
   resources   JSONB  ,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   CONSTRAINT unique_bunkai_inventory UNIQUE (kata_id, version) 
 );
 
@@ -420,7 +420,7 @@ CREATE TABLE ski.bunkai_sequences (
   notes TEXT,
   remarks public.detailednotes[],
   resources   JSONB  ,
-  resource_url TEXT,
+  resource_url TEXT DEFAULT NULL ,
   tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
   tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
   CONSTRAINT unique_bunkai_sequence UNIQUE (bunkai_id, kata_sequence_id)
@@ -529,7 +529,7 @@ RETURNS TABLE (
   name TEXT,
   description TEXT,
   notes TEXT,
-  resource_url TEXT
+  resource_url TEXT DEFAULT NULL 
 )
 LANGUAGE sql
 SECURITY DEFINER
