@@ -297,7 +297,18 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,notes,resources )
 ;
 
 --aggiornare
-INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,technic_id,gyaku,target_hgt,resources,notes,resource_url) VALUES 
+INSERT INTO ski.kihon_sequences(
+    id_sequence, 
+    inventory_id , 
+    seq_num,
+    stand_id,
+    technic_id,
+    gyaku,
+    target_hgt,
+    resources,
+    notes,
+    resource_url
+) VALUES 
     ( 1 ,1 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
     ( 2 ,1 ,1,4 , 15 ,'false' ,NULL , NULL , NULL ),
     ( 3 ,2 ,0,4 , 1 ,'false' ,NULL , NULL , NULL ),
@@ -617,7 +628,15 @@ INSERT INTO ski.kihon_sequences(id_sequence, inventory_id , seq_num,stand_id,tec
 ;
 
 --aggiornare
-INSERT INTO ski.kihon_tx(id_tx ,from_sequence ,to_sequence ,movement , resources,notes ,resource_url ) VALUES
+INSERT INTO ski.kihon_tx(
+    id_tx ,
+    from_sequence ,
+    to_sequence ,
+    movement , 
+    resources,
+    notes ,
+    resource_url 
+) VALUES
     ( 1 , 1 , 2, 'Still' , NULL , NULL ),
     ( 4 , 3 , 4, 'Still' , NULL , NULL ),
     ( 7 , 5 , 6, 'Still' , NULL , NULL ),
