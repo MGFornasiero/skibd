@@ -119,7 +119,7 @@ CREATE TYPE public.detailednotes AS (
   explatation TEXT ,
   note TEXT
 );
- 
+
 
 -- =============================================================
 -- Sequences (kept in `ski`)
@@ -600,13 +600,15 @@ RETURNS TABLE (
   seq_num SMALLINT,
   stand_id SMALLINT, -- Posizione
   posizione TEXT,
+  speed public.tempo,
   guardia public.sides,
+  hips public.hips,
   facing public.absolute_directions,
   Tecniche JSON,
   embusen public.embusen_points,
   kiai BOOLEAN,
   notes TEXT,
-  -- remarks public.detailednotes[], -- Temporarily removed
+  remarks public.detailednotes[],
   resources JSONB,
   resource_url TEXT
 )
@@ -618,7 +620,9 @@ AS $Func$
          seq.seq_num,
          seq.stand_id,
          MAX(stands.name) AS posizione,
+         seq.speed,
          seq.side AS guardia, -- lato della guardia
+         seq.hips,
          seq.facing,
          json_agg(
            json_build_object(
@@ -626,35 +630,37 @@ AS $Func$
              'arto', combo.arto,
              'technic_id', combo.technic_id,
              'Tecnica', combo.technic_name,
+             'strikingpart_id', combo.strikingpart_id,
+             'strikingpart_name', combo.strikingpart_name,
              'technic_target_id', combo.technic_target_id,
              'Obiettivo', combo.target_name,
-             'waza_note', combo.waza_note,
-             --'waza_remarks', combo.waza_remarks,
+             'waza_note', combo.notes,
              'waza_resources', combo.waza_resources
            )
          ) AS Tecniche,
          seq.embusen,
          seq.kiai,
          seq.notes,
-         -- seq.remarks, -- Temporarily removed
+         seq.remarks,
          seq.resources,
          seq.resource_url
   FROM ski.kata_sequence AS seq
   JOIN (
-    SELECT combo_raw.id_kswaza,
-           combo_raw.sequence_id,
+    SELECT combo_raw.sequence_id,
            combo_raw.arto,
            combo_raw.technic_id,
+           combo_raw.strikingpart_id,
            combo_raw.technic_target_id,
            combo_raw.notes,
            tech.name AS technic_name,
+           sp.name as strikingpart_name,
            targets.name AS target_name,
-           combo_raw.notes AS waza_note,
-           --combo_raw.remarks AS waza_remarks,
            combo_raw.resources AS waza_resources
     FROM ski.kata_sequence_waza AS combo_raw
     JOIN ski.technics AS tech
       ON combo_raw.technic_id = tech.id_technic
+    LEFT JOIN ski.strikingparts AS sp
+      ON combo_raw.strikingpart_id = sp.id_part
     LEFT JOIN ski.targets AS targets
       ON combo_raw.technic_target_id = targets.id_target
   ) AS combo
@@ -674,6 +680,7 @@ RETURNS TABLE (
   to_sequence SMALLINT,
   tempo public.tempo,
   direction public.sides,
+  intermediate_stand_id SMALLINT,
   notes TEXT,
   -- remarks public.detailednotes[], -- Temporarily removed
   resources JSONB,
@@ -690,6 +697,7 @@ AS $Func$
          to_sequence,
          tempo,
          direction,
+         intermediate_stand_id,
          notes, 
          -- remarks, -- Temporarily removed
          resources,
