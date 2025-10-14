@@ -120,7 +120,6 @@ CREATE TYPE public.detailednotes AS (
   note TEXT
 );
 
-
 -- =============================================================
 -- Sequences (kept in `ski`)
 -- This section defines sequences for generating unique IDs.
@@ -144,7 +143,6 @@ CREATE SEQUENCE ski.seq_kata_id_tx       AS SMALLINT;
 
 CREATE SEQUENCE ski.seq_bunkai_id_bunkai   AS SMALLINT;
 CREATE SEQUENCE ski.seq_bunkai_id_sequence AS SMALLINT;
-
 
 -- =============================================================
 -- Domain Tables (in schema ski)
@@ -203,27 +201,6 @@ CREATE TABLE ski.technics (
 );
 
 -- -------------------------------------------------------------
--- Table: ski.technics_decomposition
--- Explanation of techniques into components (if needed).
--- -------------------------------------------------------------
---da preparare l'insert e l'utilizzo
-CREATE TABLE ski.technics_decomposition (
-  id_decomposition SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technicdecomposition'),
-  technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
-  component_order SMALLINT NOT NULL,
-  description TEXT,
-  explatations TEXT, 
-  notes TEXT,
-  resource_url TEXT DEFAULT NULL ,
-  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
-  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
-  CONSTRAINT unique_technics_decomposition UNIQUE (technic_id, component_order)
-);
-
-
-
-
--- -------------------------------------------------------------
 -- Table: ski.stands
 -- Inventory of stances/positions.
 -- -------------------------------------------------------------
@@ -251,6 +228,31 @@ CREATE TABLE ski.grades (
   CONSTRAINT unique_grades_gtype_grade UNIQUE (gtype, grade)
 );
 
+
+-- =============================================================
+-- Compendium Tables (Fundamentals)
+-- This section defines tables related to fundamentals
+-- =============================================================
+
+
+-- -------------------------------------------------------------
+-- Table: ski.technics_decomposition
+-- Explanation of techniques into components (if needed).
+-- -------------------------------------------------------------
+--da preparare l'insert e l'utilizzo
+CREATE TABLE ski.technics_decomposition (
+  id_decomposition SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_id_technicdecomposition'),
+  technic_id SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
+  component_order SMALLINT NOT NULL,
+  description TEXT,
+  explanations TEXT, 
+  resources     JSONB  ,
+  notes TEXT,
+  resource_url TEXT DEFAULT NULL ,
+  tsv_description tsvector GENERATED ALWAYS AS (to_tsvector('simple', description)) STORED,
+  tsv_notes       tsvector GENERATED ALWAYS AS (to_tsvector('simple', notes)) STORED,
+  CONSTRAINT unique_technics_decomposition UNIQUE (technic_id, component_order)
+);
 
 -- =============================================================
 -- Compendium Tables (Kihon)
@@ -382,7 +384,6 @@ CREATE TABLE ski.kata_tx (
   tempo public.tempo,
   direction public.sides,
   intermediate_stand_id SMALLINT REFERENCES ski.stands(id_stand),
-  --mettere qualcosa 
   notes TEXT,
   remarks public.detailednotes[],
   resources   JSONB  ,
