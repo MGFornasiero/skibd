@@ -342,6 +342,7 @@ CREATE TABLE ski.kata_sequence (
   hips      public.hips,
   embusen   public.embusen_points,
   facing    public.absolute_directions,
+  looking_direction public.absolute_directions,
   kiai      BOOLEAN,
   notes     TEXT,
   remarks   public.detailednotes[],
@@ -364,6 +365,7 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
+  target_direction public.absolute_directions,
   notes             TEXT,
   resources           JSONB, 
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
@@ -382,7 +384,7 @@ CREATE TABLE ski.kata_tx (
   tempo public.tempo,
   direction public.sides,
   intermediate_stand_id SMALLINT REFERENCES ski.stands(id_stand),
-  --mettere qualcosa 
+  looking_direction public.absolute_directions,
   notes TEXT,
   remarks public.detailednotes[],
   resources   JSONB  ,
@@ -598,12 +600,13 @@ RETURNS TABLE (
   id_sequence SMALLINT,
   kata_id SMALLINT,
   seq_num SMALLINT,
-  stand_id SMALLINT, -- Posizione
+  stand_id SMALLINT,
   posizione TEXT,
   speed public.tempo,
   guardia public.sides,
   hips public.hips,
   facing public.absolute_directions,
+  looking_direction public.absolute_directions,
   Tecniche JSON,
   embusen public.embusen_points,
   kiai BOOLEAN,
@@ -621,9 +624,10 @@ AS $Func$
          seq.stand_id,
          MAX(stands.name) AS posizione,
          seq.speed,
-         seq.side AS guardia, -- lato della guardia
+         seq.side AS guardia,
          seq.hips,
          seq.facing,
+         seq.looking_direction,
          json_agg(
            json_build_object(
              'sequence_id', combo.sequence_id,
@@ -633,6 +637,7 @@ AS $Func$
              'strikingpart_id', combo.strikingpart_id,
              'strikingpart_name', combo.strikingpart_name,
              'technic_target_id', combo.technic_target_id,
+             'target_direction', combo.target_direction,
              'Obiettivo', combo.target_name,
              'waza_note', combo.notes,
              'waza_resources', combo.waza_resources
@@ -651,6 +656,7 @@ AS $Func$
            combo_raw.technic_id,
            combo_raw.strikingpart_id,
            combo_raw.technic_target_id,
+           combo_raw.target_direction,
            combo_raw.notes,
            tech.name AS technic_name,
            sp.name as strikingpart_name,
@@ -681,8 +687,9 @@ RETURNS TABLE (
   tempo public.tempo,
   direction public.sides,
   intermediate_stand_id SMALLINT,
+  looking_direction public.absolute_directions,
   notes TEXT,
-  -- remarks public.detailednotes[], -- Temporarily removed
+  remarks public.detailednotes[],
   resources JSONB,
   resource_url TEXT
 )
@@ -698,8 +705,9 @@ AS $Func$
          tempo,
          direction,
          intermediate_stand_id,
-         notes, 
-         -- remarks, -- Temporarily removed
+         looking_direction,
+         notes,
+         remarks,
          resources,
          resource_url
   FROM ski.kata_tx
@@ -920,6 +928,7 @@ $Func$;
 
 CREATE OR REPLACE FUNCTION public.get_katainfo(_kata_id INT)
 RETURNS TABLE (
+    id_kata SMALLINT,
     kata VARCHAR,
     serie public.kata_series,
     starting_leg public.sides,
@@ -930,21 +939,22 @@ RETURNS TABLE (
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-    SELECT kata, serie, starting_leg, notes, resources, resource_url
+    SELECT id_kata,kata, serie, starting_leg, notes, resources, resource_url
     FROM ski.kata_inventory -- The 'remarks' column was removed from ski.kata_inventory
     WHERE id_kata = _kata_id;
 $Func$;
 
 CREATE OR REPLACE FUNCTION public.show_gradeinventory()
 RETURNS TABLE (
-    grade SMALLINT,
+    id_grade SMALLINT ,
     gtype public.grade_type,
-    id_grade SMALLINT
+    grade SMALLINT,
+    color public.beltcolor
 )
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-    SELECT grade, gtype, id_grade
+    SELECT  id_grade, gtype,grade,color
     FROM ski.grades;
 $Func$;
 
@@ -1032,7 +1042,7 @@ CREATE OR REPLACE FUNCTION public.get_bunkais(_kata_id INT)
 RETURNS TABLE (
   id_bunkaisequence SMALLINT ,
   bunkai_id SMALLINT ,
-  version SMALLINT ,
+  version SMALLINT , 
   kata_sequence_id SMALLINT ,
   description TEXT,
   notes TEXT,
@@ -1309,44 +1319,52 @@ RETURNS TABLE (
   kata_id SMALLINT,
   seq_num SMALLINT,
   stand_id SMALLINT,
-  stand_name TEXT,
+  posizione TEXT,
   speed public.tempo,
-  side public.sides,
-  -- hips public.hips, -- Temporarily removed
-  embusen public.embusen_points,
+  guardia public.sides,
+  hips public.hips,
   facing public.absolute_directions,
+  looking_direction public.absolute_directions,
+  Tecniche JSON,
+  embusen public.embusen_points,
   kiai BOOLEAN,
   notes TEXT,
-  Tecniche JSON
+  remarks public.detailednotes[],
+  resources JSONB,
+  resource_url TEXT
 )
 LANGUAGE sql
 SECURITY DEFINER
-AS $$
+AS $Func$
 SELECT ks.id_sequence,
-ks.kata_id,
-ks.seq_num,
-ks.stand_id,
-MAX(stand.name) as stand_name,
-ks.speed,
-ks.side, 
--- ks.hips, -- Temporarily removed
-ks.embusen,
-ks.facing, 
-ks.kiai,
-ks.notes,
-json_agg(
-  json_build_object(
-    'sequence_id', combo.sequence_id,
-    'arto', combo.arto,
-    'technic_id', combo.technic_id,
-    'Tecnica', combo.technic_name,
-    'technic_target_id', combo.technic_target_id,
-    'Obiettivo', combo.target_name,
-    'waza_note', combo.waza_note,
-    --'waza_remarks', combo.waza_remarks,
-    'waza_resources', combo.waza_resources
-  )
-) AS Tecniche
+  ks.kata_id,
+  ks.seq_num,
+  ks.stand_id,
+  MAX(stand.name) as stand_name,
+  ks.speed,
+  ks.side, 
+  ks.hips,
+  ks.facing,
+  ks.looking_direction,
+  json_agg(
+    json_build_object(
+      'sequence_id', combo.sequence_id,
+      'arto', combo.arto,
+      'technic_id', combo.technic_id,
+      'Tecnica', combo.technic_name,
+      'technic_target_id', combo.technic_target_id,
+      'target_direction', combo.target_direction,
+      'Obiettivo', combo.target_name,
+      'waza_note', combo.waza_note,
+      'waza_resources', combo.waza_resources
+    )
+  ) AS Tecniche,
+  ks.embusen,
+  ks.kiai,
+  ks.notes,
+  ks.remarks,
+  ks.resources,
+  ks.resource_url
 FROM ski.kata_sequence AS ks
 LEFT JOIN ski.stands AS stand
 ON stand.id_stand = ks.stand_id
@@ -1356,11 +1374,11 @@ JOIN (
           combo_raw.arto,
           combo_raw.technic_id,
           combo_raw.technic_target_id,
+          combo_raw.target_direction,
           combo_raw.notes,
           tech.name AS technic_name,
           targets.name AS target_name,
           combo_raw.notes AS waza_note,
-          --combo_raw.remarks AS waza_remarks,
           combo_raw.resources AS waza_resources
   FROM ski.kata_sequence_waza AS combo_raw
   JOIN ski.technics AS tech
@@ -1372,5 +1390,4 @@ JOIN (
 WHERE ks.kata_id = _kata_id
 GROUP BY ks.id_sequence
 ;
-$$;
-
+$Func$;

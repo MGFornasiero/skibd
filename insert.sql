@@ -1,4 +1,3 @@
---aggiornare
 INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes,resource_url ) VALUES
     ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ,NULL ),
     ( 2 , 'Chudan' ,$$Chudan$$ ,$$Medio$$ ,$$Poco sopra l'ombelico$$ ),
@@ -174,7 +173,7 @@ INSERT INTO ski.grades (id_grade,gtype,grade, color) VALUES
     ( 15 , 'dan' , 6 , 'nero' ),
     ( 16 , 'dan' , 7 , 'nero' )
     ;
---da aggiornare
+
 INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,notes,resources ) VALUES
     ( 1 ,'1' ,'1' ),
     ( 2 ,'1' ,'2' ),
@@ -296,7 +295,6 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,notes,resources )
     ( 120 ,'12' ,'10' )
 ;
 
---aggiornare
 INSERT INTO ski.kihon_sequences(
     id_sequence, 
     inventory_id , 
@@ -627,7 +625,7 @@ INSERT INTO ski.kihon_sequences(
     ( 541 ,100 ,1,4 , -250 ,'false' ,'Chudan' , NULL , NULL )
 ;
 
---aggiornare
+
 INSERT INTO ski.kihon_tx(
     id_tx ,
     from_sequence ,
@@ -857,7 +855,7 @@ INSERT INTO ski.kihon_tx(
     ( 566 , 529 , 530, 'Still' , NULL , NULL )
 ;
 
---aggiornare
+
 INSERT INTO ski.Kata_inventory(
     id_kata ,
     kata ,
@@ -877,7 +875,7 @@ INSERT INTO ski.Kata_inventory(
     ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL ) ,
     ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL ) 
 ;
---aggiornare
+
 INSERT INTO ski.kata_sequence(
     id_sequence ,
     kata_id ,
@@ -948,7 +946,6 @@ INSERT INTO ski.kata_sequence(
     ( 58 , 2 , 28, 4 ,  'sx'  , (0,0) , 'NE' , true , NULL ) 
 ;
 
---aggiornare
 INSERT INTO ski.kata_sequence_waza (
     id_kswaza ,
     sequence_id ,
@@ -1017,7 +1014,7 @@ INSERT INTO ski.kata_sequence_waza (
     ( 57 , 'Braccio DX' , 85, NULL ,NULL ),
     ( 58 , 'Braccio SX' , 11, NULL ,NULL )
 ;
-aggiornare
+
 INSERT INTO ski.kata_tx(
     id_tx ,
     from_sequence ,
