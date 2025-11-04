@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
- 
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO  ski.targets(id_target ,name ,original_name ,description,notes,resource_url ) VALUES
     ( 1 , 'Jodan' ,$$Jodan$$ ,$$Alto$$ ,NULL ,NULL ),
     ( 2 , 'Chudan' ,$$Chudan$$ ,$$Medio$$ ,$$Poco sopra l'ombelico$$ ,NULL ),
@@ -175,134 +171,8 @@ INSERT INTO ski.grades (id_grade,gtype,grade, color) VALUES
     ( 14 , 'dan' , 5 , 'nero' ),
     ( 15 , 'dan' , 6 , 'nero' ),
     ( 16 , 'dan' , 7 , 'nero' )
-<<<<<<< HEAD
-    ;
-
-INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,notes,resources ) VALUES
-    ( 1 ,'1' ,'1' ),
-    ( 2 ,'1' ,'2' ),
-    ( 3 ,'1' ,'3' ),
-    ( 4 ,'1' ,'4' ),
-    ( 5 ,'1' ,'5' ),
-    ( 6 ,'1' ,'6' ),
-    ( 7 ,'1' ,'7' ),
-    ( 8 ,'1' ,'8' ),
-    ( 9 ,'1' ,'9' ),
-    ( 11 ,'2' ,'1' ),
-    ( 12 ,'2' ,'2' ),
-    ( 13 ,'2' ,'3' ),
-    ( 14 ,'2' ,'4' ),
-    ( 15 ,'2' ,'5' ),
-    ( 16 ,'2' ,'6' ),
-    ( 17 ,'2' ,'7' ),
-    ( 18 ,'2' ,'8' ),
-    ( 19 ,'2' ,'9' ),
-    ( 20 ,'2' ,'10' ),
-    ( 21 ,'3' ,'1' ),
-    ( 22 ,'3' ,'2' ),
-    ( 23 ,'3' ,'3' ),
-    ( 24 ,'3' ,'4' ),
-    ( 25 ,'3' ,'5' ),
-    ( 26 ,'3' ,'6' ),
-    ( 27 ,'3' ,'7' ),
-    ( 28 ,'3' ,'8' ),
-    ( 29 ,'3' ,'9' ),
-    ( 30 ,'3' ,'10' ),
-    ( 31 ,'4' ,'1' ),
-    ( 32 ,'4' ,'2' ),
-    ( 33 ,'4' ,'3' ),
-    ( 34 ,'4' ,'4' ),
-    ( 35 ,'4' ,'5' ),
-    ( 36 ,'4' ,'6' ),
-    ( 37 ,'4' ,'7' ),
-    ( 38 ,'4' ,'8' ),
-    ( 39 ,'4' ,'9' ),
-    ( 40 ,'4' ,'10' ),
-    ( 41 ,'5' ,'1' ),
-    ( 42 ,'5' ,'2' ),
-    ( 43 ,'5' ,'3' ),
-    ( 44 ,'5' ,'4' ),
-    ( 45 ,'5' ,'5' ),
-    ( 46 ,'5' ,'6' ),
-    ( 47 ,'5' ,'7' ),
-    ( 48 ,'5' ,'8' ),
-    ( 49 ,'5' ,'9' ),
-    ( 50 ,'5' ,'10' ),
-    ( 51 ,'6' ,'1' ),
-    ( 52 ,'6' ,'2' ),
-    ( 53 ,'6' ,'3' ),
-    ( 54 ,'6' ,'4' ),
-    ( 55 ,'6' ,'5' ),
-    ( 56 ,'6' ,'6' ),
-    ( 57 ,'6' ,'7' ),
-    ( 58 ,'6' ,'8' ),
-    ( 59 ,'6' ,'9' ),
-    ( 60 ,'6' ,'10' ),
-    ( 61 ,'7' ,'1' ),
-    ( 62 ,'7' ,'2' ),
-    ( 63 ,'7' ,'3' ),
-    ( 64 ,'7' ,'4' ),
-    ( 65 ,'7' ,'5' ),
-    ( 66 ,'7' ,'6' ),
-    ( 67 ,'7' ,'7' ),
-    ( 68 ,'7' ,'8' ),
-    ( 69 ,'7' ,'9' ),
-    ( 70 ,'7' ,'10' ),
-    ( 71 ,'8' ,'1' ),
-    ( 72 ,'8' ,'2' ),
-    ( 73 ,'8' ,'3' ),
-    ( 74 ,'8' ,'4' ),
-    ( 75 ,'8' ,'5' ),
-    ( 76 ,'8' ,'6' ),
-    ( 77 ,'8' ,'7' ),
-    ( 78 ,'8' ,'8' ),
-    ( 79 ,'8' ,'9' ),
-    ( 80 ,'8' ,'10' ),
-    ( 81 ,'9' ,'1' ),
-    ( 82 ,'9' ,'2' ),
-    ( 83 ,'9' ,'3' ),
-    ( 84 ,'9' ,'4' ),
-    ( 85 ,'9' ,'5' ),
-    ( 86 ,'9' ,'6' ),
-    ( 87 ,'9' ,'7' ),
-    ( 88 ,'9' ,'8' ),
-    ( 89 ,'9' ,'9' ),
-    ( 91 ,'10' ,'1' ),
-    ( 92 ,'10' ,'2' ),
-    ( 93 ,'10' ,'3' ),
-    ( 94 ,'10' ,'4' ),
-    ( 95 ,'10' ,'5' ),
-    ( 96 ,'10' ,'6' ),
-    ( 97 ,'10' ,'7' ),
-    ( 98 ,'10' ,'8' ),
-    ( 99 ,'10' ,'9' ),
-    ( 100 ,'10' ,'10' ),
-    ( 101 ,'11' ,'1' ),
-    ( 102 ,'11' ,'2' ),
-    ( 103 ,'11' ,'3' ),
-    ( 104 ,'11' ,'4' ),
-    ( 105 ,'11' ,'5' ),
-    ( 106 ,'11' ,'6' ),
-    ( 107 ,'11' ,'7' ),
-    ( 108 ,'11' ,'8' ),
-    ( 109 ,'11' ,'9' ),
-    ( 110 ,'11' ,'10' ),
-    ( 111 ,'12' ,'1' ),
-    ( 112 ,'12' ,'2' ),
-    ( 113 ,'12' ,'3' ),
-    ( 114 ,'12' ,'4' ),
-    ( 115 ,'12' ,'5' ),
-    ( 116 ,'12' ,'6' ),
-    ( 117 ,'12' ,'7' ),
-    ( 118 ,'12' ,'8' ),
-    ( 119 ,'12' ,'9' ),
-    ( 120 ,'12' ,'10' )
 ;
 
-=======
-;
-
---da aggiornare
 INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,resources,notes ) VALUES
     ( 1 ,1 ,1 , $${"chiave":"valore","secondachiave":"secondo valore"}$$::jsonb , $$nota$$ ),
     ( 2 ,1 ,2 , NULL , NULL ),
@@ -425,7 +295,6 @@ INSERT INTO ski.kihon_inventory(id_inventory ,grade_id ,number,resources,notes )
 ;
 
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.kihon_sequences(
     id_sequence, 
     inventory_id , 
@@ -757,11 +626,7 @@ INSERT INTO ski.kihon_sequences(
     ( 541 ,100 ,1,4 , -250 ,NULL , 'false' ,'Chudan' , NULL , NULL , NULL )
 ;
 
-<<<<<<< HEAD
-
-=======
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.kihon_tx(
     id_tx ,
     from_sequence ,
@@ -992,11 +857,7 @@ INSERT INTO ski.kihon_tx(
     ( 566 , 529 , 530, 'Still' , NULL , NULL , NULL , NULL )
 ;
 
-<<<<<<< HEAD
-
-=======
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.Kata_inventory(
     id_kata ,
     kata ,
@@ -1016,11 +877,7 @@ INSERT INTO ski.Kata_inventory(
     ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL , NULL , NULL ) ,
     ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL , NULL , NULL ) 
 ;
-<<<<<<< HEAD
-
-=======
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.kata_sequence(
     id_sequence ,
     kata_id ,
@@ -1091,10 +948,7 @@ INSERT INTO ski.kata_sequence(
     ( 58 , 2 , 28, 4 , NULL ,  'sx'  , NULL , (0,0) , 'NE' , true , NULL , NULL , NULL , NULL ) 
 ;
 
-<<<<<<< HEAD
-=======
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.kata_sequence_waza (
     id_kswaza ,
     sequence_id ,
@@ -1164,10 +1018,7 @@ INSERT INTO ski.kata_sequence_waza (
     ( 57 , 58 , ('Braccio','sx') , 11, NULL , NULL ,NULL ,NULL )
 ;
 
-<<<<<<< HEAD
-=======
  
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
 INSERT INTO ski.kata_tx(
     id_tx ,
     from_sequence ,
