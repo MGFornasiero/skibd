@@ -877,7 +877,8 @@ INSERT INTO ski.Kata_inventory(
     ( 8 , 'Jion' , 'Sentei' , 'frontal' , NULL , NULL , NULL ) ,
     ( 9 , 'Empi' , 'Sentei' , 'sx' , NULL , NULL , NULL ) 
 ;
- 
+
+--verificare excel che produce questo insert in particolare l'arto
 INSERT INTO ski.kata_sequence(
     id_sequence ,
     kata_id ,
@@ -894,7 +895,7 @@ INSERT INTO ski.kata_sequence(
     resources,
     resource_url
 ) VALUES
-    ( 1 , 1 , 0, 1 ,  'Fast'  ,  'frontal'  , NULL , (0,0) , 'N' , false , $$Preparare il piede destro$$ , ARRAY[ROW('Braccio SX', $$Parata$$, $$Uchi uke lascia passare l'attacco$$, $$Parata da un attacco$$)::public.detailednotes] , $${"chiave":"valore","secondachiave":"secondo valore"}$$::jsonb , NULL ) ,
+    ( 1 , 1 , 0, 1 ,  'Fast'  ,  'frontal'  , NULL , (0,0) , 'N' , false , $$Preparare il piede destro$$ , ARRAY[ROW(('Braccio','sx'), $$Parata$$, $$Uchi uke lascia passare l'attacco$$, $$Parata da un attacco$$)::public.detailednotes] , $${"chiave":"valore","secondachiave":"secondo valore"}$$::jsonb , NULL ) ,
     ( 2 , 1 , 1, 4 , NULL ,  'sx'  ,  'Hanmi'  , (0,0) , 'O' , false , NULL , NULL , NULL , NULL ) ,
     ( 3 , 1 , 2, 4 , NULL ,  'dx'  ,  'Shomen'  , (-1,0) , 'O' , false , $$braccio sinistro spinge verso destra per caricare la rotazione$$ , NULL , NULL , NULL ) ,
     ( 4 , 1 , 3, 4 , NULL ,  'dx'  , NULL , (-2,0) , 'E' , false , NULL , NULL , NULL , NULL ) ,
@@ -1100,7 +1101,7 @@ VALUES
     ( 2 , 2 , 1 , $$Applicazione Nidan$$ , $$Secondo esempio$$ , $$Bunkai di esempio$$ , $${"Spiegazione":"Ecco una spiegazione","Autore":"M° Capa di bomba"}$$::jsonb , NULL ),
     ( 3 , 2 , 2 , $$Applicazione Nidan due$$ , $$esempio aggiuntivo$$ , NULL , $${"Spiegazione":"Spiegato","info":"questo è un test"}$$::jsonb , NULL )
 ;
-
+--verificare excel che produce questo insert in particolare l'array di detailednotes ci sono delle virgolette di troppo alla fine
 INSERT 
 INTO ski.bunkai_sequences (
     id_bunkaisequence,
@@ -1118,7 +1119,7 @@ VALUES
     ( 3 , 2 , 31 , $$Parata$$ , NULL , NULL , NULL , NULL ),
     ( 4 , 2 , 32 , $$Parata e attacco$$ , NULL , ARRAY[
         ROW(('Braccio','sx'), $$Parata$$, $$Uchi uke lascia passare l'attacco$$, $$Parata da un attacco$$)::public.detailednotes,
-        ROW(('Braccio','dx'), $$Offesa$$, $$Passando dall'' interno colpisce l''avversario$$, $$Attacco$$)::public.detailednotes] , NULL , NULL ),"
+        ROW(('Braccio','dx'), $$Offesa$$, $$Passando dall'' interno colpisce l''avversario$$, $$Attacco$$)::public.detailednotes] , NULL , NULL ),
     ( 5 , 2 , 33 , $$Attacco$$ , NULL , NULL , NULL , NULL )
 ;
 
