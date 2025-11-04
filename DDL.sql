@@ -367,9 +367,9 @@ CREATE TABLE ski.kata_sequence_waza (
   technic_id        SMALLINT NOT NULL REFERENCES ski.technics(id_technic),
   strikingpart_id   SMALLINT REFERENCES ski.strikingparts(id_part),
   technic_target_id SMALLINT REFERENCES ski.targets(id_target),
-  target_direction public.absolute_directions,
+  target_direction  public.absolute_directions,
   notes             TEXT,
-  resources           JSONB, 
+  resources         JSONB, 
   tsv_notes tsvector GENERATED ALWAYS AS (to_tsvector('simple', 
     coalesce(notes, '') 
   )) STORED
@@ -386,10 +386,7 @@ CREATE TABLE ski.kata_tx (
   tempo public.tempo,
   direction public.sides,
   intermediate_stand_id SMALLINT REFERENCES ski.stands(id_stand),
-<<<<<<< HEAD
   looking_direction public.absolute_directions,
-=======
->>>>>>> 0400b5fb7974a22c687900c0b63e926d1ffcbfa6
   notes TEXT,
   remarks public.detailednotes[],
   resources   JSONB  ,
