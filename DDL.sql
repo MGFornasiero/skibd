@@ -420,6 +420,7 @@ CREATE TABLE ski.bunkai_sequences (
   id_bunkaisequence SMALLINT PRIMARY KEY DEFAULT nextval('ski.seq_bunkai_id_sequence'),
   bunkai_id SMALLINT NOT NULL REFERENCES ski.bunkai_inventory(id_bunkai),
   kata_sequence_id SMALLINT NOT NULL REFERENCES ski.kata_sequence(id_sequence),
+  -- #waza_ref SMALLINT non si può mettere il constraint
   description TEXT,
   notes TEXT,
   remarks public.detailednotes[],
@@ -542,6 +543,27 @@ AS $Func$
   FROM ski.technics
   WHERE id_technic = _technic_id;
 $Func$;
+
+CREATE OR REPLACE FUNCTION public.get_technic_decompositio(_technic_id INT)
+RETURNS TABLE (
+  id_decomposition SMALLINT,
+  technic_id SMALLINT,
+  component_order SMALLINT,
+  description TEXT,
+  explanations TEXT,
+  resources JSONB,
+  notes TEXT,
+  resource_url TEXT
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $Func$
+  SELECT id_decomposition,technic_id , component_order, description, explanations, resources, notes, resource_url
+  FROM ski.technics_decomposition
+  WHERE technic_id = _technic_id
+  ORDER BY component_order;
+$Func$;
+
 
 -- Stand info
 CREATE OR REPLACE FUNCTION public.get_stand_info(_stand_id INT)
