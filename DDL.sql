@@ -544,26 +544,6 @@ AS $Func$
   WHERE id_technic = _technic_id;
 $Func$;
 
-CREATE OR REPLACE FUNCTION public.get_technic_decompositio(_technic_id INT)
-RETURNS TABLE (
-  id_decomposition SMALLINT,
-  technic_id SMALLINT,
-  component_order SMALLINT,
-  description TEXT,
-  explanations TEXT,
-  resources JSONB,
-  notes TEXT,
-  resource_url TEXT
-)
-LANGUAGE sql
-SECURITY DEFINER
-AS $Func$
-  SELECT id_decomposition,technic_id , component_order, description, explanations, resources, notes, resource_url
-  FROM ski.technics_decomposition
-  WHERE technic_id = _technic_id
-  ORDER BY component_order;
-$Func$;
-
 
 -- Stand info
 CREATE OR REPLACE FUNCTION public.get_stand_info(_stand_id INT)
@@ -1324,14 +1304,14 @@ RETURNS TABLE (
   technic_id SMALLINT,
   component_order SMALLINT,
   description TEXT,
-  explatations TEXT, 
+  explanations TEXT, 
   notes TEXT,
   resource_url TEXT
 )
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-  SELECT id_decomposition, technic_id, component_order, description, explatations, notes, resource_url
+  SELECT id_decomposition, technic_id, component_order, description, explanations, notes, resource_url
   FROM ski.technics_decomposition
   WHERE technic_id = _technic_id
   ORDER BY component_order;
