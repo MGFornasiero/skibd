@@ -1002,11 +1002,14 @@ $Func$;
 
 
 CREATE OR REPLACE FUNCTION public.get_kihonnotes(_gradeid INT, _num INT)
-RETURNS TEXT
+RETURNS TABLE (
+    resources JSONB,
+    notes TEXT
+)
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-  SELECT notes 
+  SELECT resources , notes
   FROM ski.kihon_inventory
   WHERE grade_id = _gradeid AND number = _num;
 $Func$;
@@ -1324,14 +1327,14 @@ RETURNS TABLE (
   technic_id SMALLINT,
   component_order SMALLINT,
   description TEXT,
-  explatations TEXT, 
+  explanations TEXT, 
   notes TEXT,
   resource_url TEXT
 )
 LANGUAGE sql
 SECURITY DEFINER
 AS $Func$
-  SELECT id_decomposition, technic_id, component_order, description, explatations, notes, resource_url
+  SELECT id_decomposition, technic_id, component_order, description, explanations, notes, resource_url
   FROM ski.technics_decomposition
   WHERE technic_id = _technic_id
   ORDER BY component_order;
